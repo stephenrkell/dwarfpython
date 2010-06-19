@@ -1,0 +1,615 @@
+.vimrc:inoremap @ <C-R>=fnamemodify("<C-R>%", ":t:r")<CR>
+ParathonContext.cc:    this->interpreterMode = false;
+ParathonContext.cc:    this->parent = parent;
+ParathonContext.cc:    this->context = &c;
+ParathonContext.cc:    this->name = name;
+ParathonContext.cc:    this->context->assign(this->name, value);
+ParathonException.cc:    this->message = message;
+ParathonException.cc:    this->message = s.str();
+ParathonValue.cc:ParathonValue * None = new ParathonValue(); // Emphatically, `not` NULL - though its actual value doesn't matter
+ParathonValue.cc:    this->die = NULL;
+ParathonValue.cc:    this->value = NULL;
+ParathonValue.cc:// ASSUME this is ACTUALLY a pointer! otherwise it won't be unique - 
+ParathonValue.cc:    this->value = p;
+ParathonValue.cc:    this->assign("__set__", None);
+ParathonValue.cc:    this->assign("__delete__", None);
+ParathonValue.cc:// Use read-only property instead.
+ParathonValue.cc://    this->value = p;
+ParathonValue.cc://    this->die = NULL;
+ParathonValue.cc:    if (ds->isParathonValue())
+ParathonValue.cc:        return i->second;
+ParathonValue.cc:    if (!(new_type = this->die->for_closure()))
+ParathonValue.cc:    if (!(userdata->bound_arg = self->castTo(this->die->child(0))))
+ParathonValue.cc:    ffi_type **args = new_type->ffi_args();
+ParathonValue.cc:    userdata->bound_ffi_type = this->die->child(0)->as_ffi();
+ParathonValue.cc:    userdata->bound_function = *(void(**)())this->value;
+ParathonValue.cc:    if (ffi_prep_cif(cif, FFI_DEFAULT_ABI, new_type->child_length(), 
+ParathonValue.cc:            new_type->ffi_return(), args) != FFI_OK)
+ParathonValue.cc:    if (type->isParathonValue())
+ParathonValue.cc:    if (type->isSameType(this->die))
+ParathonValue.cc:        return (void *)this->value;
+ParathonValue.cc:    if (this->die->isPointerTo(type))
+ParathonValue.cc:        return *(void **)this->value;
+ParathonValue.cc:    if (this->store.count(name))
+ParathonValue.cc:        return this->store.at(name);
+ParathonValue.cc:    else if (this->parent)
+ParathonValue.cc:        return this->parent->lookup(name);
+ParathonValue.cc:    this->store[std::string(name)] = value;
+ParathonValue.cc:    //TODO - and rename (to handle "nonlocal")
+ParathonValue.cc:    this->value = str;
+ParathonValue.cc:    this->die = die_wrapper::builtin("parathon_string");
+ParathonValue.cc:    this->value = malloc(8);
+ParathonValue.cc:    *(parathon_int*)this->value = i;
+ParathonValue.cc:    this->die = die_wrapper::builtin("parathon_int");
+ParathonValue.cc:    this->assign("__class__", ParathonValue::builtins.lookup("int"));
+ParathonValue.cc:    this->value = malloc(8);
+ParathonValue.cc:    *(parathon_float*)this->value = f;
+ParathonValue.cc:    this->die = die_wrapper::builtin("parathon_float");
+ParathonValue.cc:    this->assign("__class__", ParathonValue::builtins.lookup("float"));
+ParathonValue.cc:    this->registerInstance(pnt, this);
+ParathonValue.cc:    this->value = malloc(4);
+ParathonValue.cc:    *(void **)this->value = pnt;
+ParathonValue.cc:    this->die = die;
+ParathonValue.cc:    return *(char *)(this->call("__nonzero__")->value);
+ParathonValue.cc://    if (this->nspace && this->die)
+ParathonValue.cc://        strcpy(nsym, this->prefix);
+ParathonValue.cc://        return new ParathonValue(dlsym(this->nspace, nsym), new die_wrapper(this->die, nsym));
+ParathonValue.cc:    return this->die->isFunction();
+ParathonValue.cc:    return BUILTIN__getattr__(&builtins)(this, (char*)sym)->call();
+ParathonValue.cc:    argv->push_back(other);
+ParathonValue.cc:    return fun->call(argv);
+ParathonValue.cc:    return this->call(&args);
+ParathonValue.cc:    if (!(this && this->isFunction()))
+ParathonValue.cc:    if (this->die->child_length() != args->size())
+ParathonValue.cc:        std::cerr << "Tried to call a multi-argument function" << std::endl;
+ParathonValue.cc:    ffi_type ** arg_types = this->die->ffi_args();
+ParathonValue.cc:    void ** values = (void **)malloc(sizeof(void*)*args->size());
+ParathonValue.cc:    unsigned int argc = this->die->child_length();
+ParathonValue.cc:    ffi_type *return_type = this->die->ffi_return();
+ParathonValue.cc:        values[i] = *(void**)(*args)[i]->castTo(this->die->child(i));
+ParathonValue.cc:        ffi_call(&cif, (void(*)())this->value, &ret, values);
+ParathonValue.cc:    return ParathonValue::get(ret, this->die->return_type());
+ParathonValue.cc:    return this->call(&a);
+ParathonValue.cc:    ParathonValue* result = to_str->call();
+ParathonValue.cc:        strm << (char *)result->value << std::endl;
+ParathonValue.cc:        strm << "ParathonValue instance at '" << this->value << std::endl;
+ParathonValue.cc:        v->toStream(strm);
+SConstruct:env.Append(BUILDERS = {'Ctags': Builder(action='ctags -R --c++-kinds=+p --fields=+iaS --extra=+q .')})
+SConstruct:g = CXXFile(target=['parathon.yy.cc', 'parathon.yy.hh'], source='parathon.yy', YACCFLAGS='-d')
+SConstruct:h = CFile(target=['parathon.l.cc','parathon.l.h'], source='parathon.l', FLEXFLAGS=['--header-file','parathon.l.h'])
+SConstruct:    CCFLAGS=["-Wall", ["-I" + os.path.realpath(os.curdir), "-I../ffi/include", "-g", "-fPIC"]],
+SConstruct:    CFLAGS=["-Wall", "-g"],
+SConstruct:    LDFLAGS=["-L./dwarfpp", "-L../libsrk31c++", "-L./runtime"]
+SConstruct:SharedLibrary(Glob("runtime/int.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SConstruct:SharedLibrary(Glob("runtime/float.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SConstruct:SharedLibrary(Glob("runtime/builtin_types.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SConstruct:SharedLibrary(Glob("runtime/list.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+ast.cc:    stmt->toStream(strm);
+ast/AndExpression.cc:    e->lhs = lhs;
+ast/AndExpression.cc:    e->op = op;
+ast/AndExpression.cc:    e->rhs = rhs;
+ast/AndExpression.cc:    ParathonValue *x = this->lhs->evaluate(c);
+ast/AndExpression.cc:        return x->call("__and__", this->rhs->evaluate(c));
+ast/AndPhrase.cc:    nop->lhs = ap;
+ast/AndPhrase.cc:    nop->rhs = np;
+ast/AndPhrase.cc:    strm << "(" << this->lhs << " and " << this->rhs << ")";
+ast/ArithExpression.cc:    e->lhs = lhs;
+ast/ArithExpression.cc:    e->rhs = rhs;
+ast/ArithExpression.cc:    e->op = op;
+ast/ArithExpression.cc:    return parathon_call(this->op->opname(), this->lhs->evaluate(c), this->rhs->evaluate(c));
+ast/AssignStatement.cc:    this->lhs = lhs;
+ast/AssignStatement.cc:    this->rhs = rhs;
+ast/AssignStatement.cc:    this->op = op;
+ast/AssignStatement.cc:    strm << this->lhs << " ";
+ast/AssignStatement.cc:    if (this->op != NULL)
+ast/AssignStatement.cc:        strm << this->op;
+ast/AssignStatement.cc:    strm << "= " << this->rhs;
+ast/AssignStatement.cc:    ParathonValue *x = rhs->evaluate(c);
+ast/AssignStatement.cc:    ParathonAssigner *a = this->lhs->getAssigner(c);
+ast/AssignStatement.cc:        a->assign(x);
+ast/ComparisonList.cc:    cl->exprs.push_back(exa);
+ast/ComparisonList.cc:    cl->exprs.push_back(exb);
+ast/ComparisonList.cc:    cl->comps.push_back(co);
+ast/ComparisonList.cc:    cl->exprs.push_back(exb);
+ast/ComparisonList.cc:    cl->comps.push_back(co);
+ast/ComparisonList.cc:    for (i = 0; i < this->comps.size(); i++)
+ast/ComparisonList.cc:        strm << this->exprs[i];
+ast/ComparisonList.cc:        strm << " " << this->comps[i] << " ";
+ast/ComparisonList.cc:    strm << this->exprs[i];
+ast/ComparisonOperator.cc:    strm << this->evaluate(c) << std::endl;
+ast/DeleteStatement.cc:    ds->test_list = t;
+ast/DeleteStatement.cc:    strm << "del " << this->test_list;
+ast/DottedAsNames.cc:    return (new DottedAsNames())->append(dn->lastName(), dn);
+ast/DottedAsNames.cc:    return (new DottedAsNames())->append(name, dn);
+ast/DottedAsNames.cc:    return dan->append(dn->lastName(), dn);
+ast/DottedAsNames.cc:    return dan->append(name, dn);
+ast/DottedAsNames.cc:    this->imports[name] = dn;
+ast/DottedAsNames.cc:    for (iter = this->imports.begin(); iter != this->imports.end(); ++iter)
+ast/DottedAsNames.cc:        strm << sep << iter->second;
+ast/DottedAsNames.cc:        if (iter->second->lastName() != iter->first)
+ast/DottedAsNames.cc:            strm << " as " << iter->first;
+ast/DottedAsNames.cc:    for (iter = this->imports.begin(); iter != this->imports.end(); ++iter)
+ast/DottedAsNames.cc:        c.assign(iter->first, BUILTIN__import__(&c)(iter->first, &c));
+ast/DottedName.cc:    return (new DottedName())->append(name);
+ast/DottedName.cc:    return dn->append(name);
+ast/DottedName.cc:    this->names.push_back(name);
+ast/DottedName.cc:    return this->names.back();
+ast/DottedName.cc:    for (unsigned i=0; i < this->names.size(); i++)
+ast/DottedName.cc:        strm << this->names[i] << (i + 1 == this->names.size() ? "": ".");
+ast/Expression.cc:    e->lhs = lhs;
+ast/Expression.cc:    e->op = op;
+ast/Expression.cc:    e->rhs = rhs;
+ast/Expression.cc:    strm << "(" << this->lhs << " " << this->op << " " << this->rhs << ")";
+ast/Expression.cc:    return parathon_call("__or__", this->lhs->evaluate(c), this->rhs->evaluate(c));
+ast/FactExpression.cc:    e->lhs = lhs;
+ast/FactExpression.cc:    e->op = op;
+ast/FactExpression.cc:    e->rhs = rhs;
+ast/FunctionCall.cc:    asp->base_phrase = bp;
+ast/FunctionCall.cc:    asp->parameter_list = pl;
+ast/FunctionCall.cc:    strm << this->base_phrase << "(" << this->parameter_list << ")";
+ast/GetAttr.cc:    ga->base_phrase = bp;
+ast/GetAttr.cc:    ga->name = name;
+ast/GetAttr.cc:    strm << this->base_phrase << "." << this->name;
+ast/GetAttr.cc:    return BUILTIN__getattr__(&c)(base_phrase->evaluate(c), this->name->getName());
+ast/GetItem.cc:    asp->base_phrase = bp;
+ast/GetItem.cc:    asp->slice_list = sl;
+ast/GetItem.cc:    //FIXME - this should ensure that it is returning a tuple
+ast/GetItem.cc:    strm << this->base_phrase << "[" << this->slice_list << "]";
+ast/GlobalStatement.cc:    return (new GlobalStatement())->append(np);
+ast/GlobalStatement.cc:    return gp->append(np);
+ast/GlobalStatement.cc:    this->names.push_back(np);
+ast/GlobalStatement.cc:    for(unsigned i = 0; i < this->names.size(); i++)
+ast/GlobalStatement.cc:        strm << sep << this->names[i];
+ast/IfStatement.cc:    is->test = tp;
+ast/IfStatement.cc:    is->true_suite = s;
+ast/IfStatement.cc:    is->false_suite = s;
+ast/IfStatement.cc:    strm << "if " << this->test << ":" << this->true_suite; 
+ast/IfStatement.cc:    if (this->test->evaluate(c)->isTrue())
+ast/IfStatement.cc:        return this->true_suite->evaluate(c);
+ast/IfStatement.cc:    else if(this->false_suite)
+ast/IfStatement.cc:        return this->false_suite->evaluate(c);
+ast/ImportAsNames.cc:    return (new ImportAsNames())->append(name, name);
+ast/ImportAsNames.cc:    return (new ImportAsNames())->append(name, item);
+ast/ImportAsNames.cc:    return dan->append(name, name);
+ast/ImportAsNames.cc:    return dan->append(name, item);
+ast/ImportAsNames.cc:    this->imports[name] = item;
+ast/ImportAsNames.cc:    this->from = from;
+ast/ImportAsNames.cc:    for (iter = this->imports.begin(); iter != this->imports.end(); ++iter)
+ast/ImportAsNames.cc:        strm << sep << iter->second;
+ast/ImportAsNames.cc:        if (iter->second != iter->first)
+ast/ImportAsNames.cc:            strm << " as " << iter->first;
+ast/ImportStatement.cc:    return ian->setFrom(name);
+ast/ImportStatement.cc:    this->evaluate(c);
+ast/InlineIfPhrase.cc:    iip->when_false = tp;
+ast/InlineIfPhrase.cc:    iip->condition = op;
+ast/InlineIfPhrase.cc:    strm << "(" << this->when_true << " if " << this->condition << " else " << this->when_false << ")"; 
+ast/InlineIfPhrase.cc:    this->when_true = tp;
+ast/ListMaker.cc:    lm->test_list = tl;
+ast/ListMaker.cc:    strm << "[" << this->test_list << "]";
+ast/MultExpression.cc:    e->lhs = lhs;
+ast/MultExpression.cc:    e->rhs = rhs;
+ast/MultExpression.cc:    e->op = op;
+ast/NamePhrase.cc:    np->name = name;
+ast/NamePhrase.cc:    strm << this->name;
+ast/NamePhrase.cc:    return new ParathonContextAssigner(c, this->name);
+ast/NamePhrase.cc:    if (c.lookup(this->name))
+ast/NamePhrase.cc:        return c.lookup(this->name);
+ast/NamePhrase.cc:        throw ParathonException("NameError: name '" + string(this->name) + "' is not defined", linenum);
+ast/NamePhrase.cc:    return this->name;
+ast/NotPhrase.cc:    nop->lhs = NULL;
+ast/NotPhrase.cc:    nop->rhs = ap;
+ast/NotPhrase.cc:    strm << "(not " << this->rhs << ")";
+ast/OpMinus.cc:    strm << "-";
+ast/OpNegative.cc:    strm << "-";
+ast/OrPhrase.cc:    nop->lhs = op;
+ast/OrPhrase.cc:    nop->rhs = ap;
+ast/OrPhrase.cc:    strm << "(" << this->lhs << " or " << this->rhs << ")";
+ast/ParameterList.cc:    return (new ParameterList())->updateWithArgs(pla);
+ast/ParameterList.cc:    pl->args = NULL;
+ast/ParameterList.cc:    pl->kwargs = NULL;
+ast/ParameterList.cc:    return pl->updateWithArgs(pla);
+ast/ParameterList.cc:    this->kwargs = pla->getKwargs();
+ast/ParameterList.cc:    this->args = pla->getArgs();
+ast/ParameterList.cc:    for (unsigned i = 0; i < this->params.size(); i++)
+ast/ParameterList.cc:        strm << sep << this->params[i];
+ast/ParameterList.cc:    if (this->args) 
+ast/ParameterList.cc:        strm << sep << "*" << this->args;
+ast/ParameterList.cc:    if (this->kwargs)
+ast/ParameterList.cc:        strm << sep << "**" << this->kwargs;
+ast/ParameterListArgs.cc:    plk->args = NULL;
+ast/ParameterListArgs.cc:    pla->args = tp;
+ast/ParameterListArgs.cc:    pla->kwargs = NULL;
+ast/ParameterListArgs.cc:    kw->args = tp;
+ast/ParameterListArgs.cc:    return this->args;
+ast/ParameterListArgs.cc:    return this->kwargs;
+ast/ParameterListKwargs.cc:    plk->kwargs = NULL;
+ast/ParameterListKwargs.cc:    plk->kwargs = tp;
+ast/ParameterListNonArgs.cc:    return (new ParameterListNonArgs())->append(pp);
+ast/ParameterListNonArgs.cc:    return (pl)->append(pp);
+ast/ParameterListNonArgs.cc:    this->params.push_back(pp);
+ast/ParameterPhrase.cc:    pp->name = NULL;
+ast/ParameterPhrase.cc:    pp->value = tp;
+ast/ParameterPhrase.cc:    pp->name = np;
+ast/ParameterPhrase.cc:    pp->value = tp;
+ast/ParameterPhrase.cc:    if (this->name)
+ast/ParameterPhrase.cc:        strm << this->name << "=";
+ast/ParameterPhrase.cc:    strm << this->value;
+ast/PrintStatement.cc:    return (new PrintStatement())->addTestList(tl);
+ast/PrintStatement.cc:    p->file = file;
+ast/PrintStatement.cc:    return PrintStatement::parse(_t, _tt, file)->addTestList(tl);
+ast/PrintStatement.cc:    this->testlist = NULL;
+ast/PrintStatement.cc:    this->file = NULL;
+ast/PrintStatement.cc:    this->testlist = tl;
+ast/PrintStatement.cc:    if (this->file)
+ast/PrintStatement.cc:        s << " >>" << this->file << (this->testlist ? "," : "");
+ast/PrintStatement.cc:    if (this->testlist)
+ast/PrintStatement.cc:        s << " " << this->testlist;
+ast/PrintStatement.cc:    for (unsigned i = 0; i < this->testlist->size(); i++)
+ast/PrintStatement.cc:        this->testlist->item(i)->evaluate(c)->toStream(std::cout);
+ast/PrintStatement.cc:    if (!this->testlist->hasTrailingComma())
+ast/ReprPhrase.cc:    rp->test_list = tl;
+ast/ReprPhrase.cc:    strm << "`" << this->test_list << "`";
+ast/ShiftExpression.cc:    e->op = op;
+ast/ShiftExpression.cc:    e->lhs = lhs;
+ast/ShiftExpression.cc:    e->rhs = rhs;
+ast/SimpleStatement.cc: * A simple statement is essentially one line - i.e. multiple ; separated expressions
+ast/SimpleStatement.cc:    s->statements.push_back(ss);
+ast/SimpleStatement.cc:    s->statements.push_back(ss);
+ast/SimpleStatement.cc:    for (unsigned i=0; i<this->statements.size(); i++)
+ast/SimpleStatement.cc:        strm << this->statements[i] << (i+1 >= this->statements.size() ? "" : ";");
+ast/SimpleStatement.cc:    for (unsigned i=0; i<this->statements.size(); i++)
+ast/SimpleStatement.cc:        this->statements[i]->evaluate_print(c, strm);
+ast/SimpleStatement.cc:    for (unsigned i=0; i<this->statements.size(); i++)
+ast/SimpleStatement.cc:        this->statements[i]->evaluate(c);
+ast/SingleInput.cc:    strm << this->evaluate(c);
+ast/SliceList.cc:    return (new SliceList())->append(sp);
+ast/SliceList.cc:    return sl->append(sp);
+ast/SliceList.cc:    this->slices.push_back(sp);
+ast/SliceList.cc:    for (unsigned i = 0; i < this->slices.size(); i++)
+ast/SliceList.cc:        strm << sep << this->slices[i];
+ast/SlicePhrase.cc:    sl->from = from;
+ast/SlicePhrase.cc:    sl->from = from->testPhrase();
+ast/SlicePhrase.cc:    sl->to = to->testPhrase();
+ast/SlicePhrase.cc:    sl->step = step->testPhrase();
+ast/SlicePhrase.cc:    this->ellipsis = ellipsis;
+ast/SlicePhrase.cc:    this->from = this->to = this->step = NULL;
+ast/SlicePhrase.cc:    if (this->ellipsis)
+ast/SlicePhrase.cc:        if(this->from)
+ast/SlicePhrase.cc:            strm << this->from;
+ast/SlicePhrase.cc:        if(this->to || this->step)
+ast/SlicePhrase.cc:            if (this->to)
+ast/SlicePhrase.cc:                strm << this->to;
+ast/SlicePhrase.cc:            if (this->step)
+ast/SlicePhrase.cc:                strm << ":" << this->step;
+ast/SmallStatement.cc:    strm << this->evaluate(c) << std::endl;
+ast/SuiteBody.cc:    sb->statements.push_back(t);
+ast/SuiteBody.cc:    sb->statements.push_back(t);
+ast/SuiteBody.cc:    for (unsigned i=0; i < this->statements.size(); i++)
+ast/SuiteBody.cc:        strm << this->statements[i] << std::endl;
+ast/SuiteBody.cc:    for (unsigned i=0; i < this->statements.size(); i++)
+ast/SuiteBody.cc:        ret = this->statements[i]->evaluate(c);
+ast/TestList.cc: * A possibly empty,. comma-separated list of "test"s
+ast/TestList.cc:    tl->trailing = false;
+ast/TestList.cc:    for (unsigned i=0; i < this->tests.size(); i++)
+ast/TestList.cc:        strm << this->tests[i] << ((this->trailing == false && this->tests.size() <= i + 1) ? "": ", ");
+ast/TestList.cc:    return this->trailing;
+ast/TestList.cc:    return this->tests.size();
+ast/TestList.cc:    return this->tests[i];
+ast/TestListNonEmpty.cc:    tl->trailing = false;
+ast/TestListNonEmpty.cc:    tl->trailing = true;
+ast/TestListNonTrailing.cc:    return (new TestListNonTrailing())->append(tp);
+ast/TestListNonTrailing.cc:    return tl->append(tp);
+ast/TestListNonTrailing.cc:    this->tests.push_back(tp);
+ast/TestPhrase.cc:    return iip->setTrue(op);
+ast/TestPhraseBracketed.cc: * This is perhaps the ickiest artifact of the generated parser stuff -
+ast/TestPhraseBracketed.cc: *  in a sane world we could just return the TestPhrase, but that wouldn't be type-checkable
+ast/TestPhraseBracketed.cc:    tpb->tp = tp;
+ast/TestPhraseBracketed.cc:    return this->tp->evaluate(c);
+ast/TestPhraseOptional.cc: * This thing is only temporary - it is not actually incorporated into the syntax tree.
+ast/TestPhraseOptional.cc: * (should reflect that in some way - we certainly don't need to implement toStream)
+ast/TestPhraseOptional.cc:    this->tp = tp;
+ast/TestPhraseOptional.cc:    return this->tp;
+ast/TestPhraseOptional.cc:    strm << this->tp;
+ast/TestStatement.cc:    return tl->append(tp);
+ast/TupleMaker.cc:    tm->test_list = tl->append(tp);
+ast/TupleMaker.cc:    tm->test_list = tl;
+ast/TupleMaker.cc:    strm << "(" << this->test_list << (this->test_list->size() < 2 ? ",)" : ")");
+ast/UnaryPhrase.cc:    e->op = op;
+ast/UnaryPhrase.cc:    e->rhs = up;
+ast/UnaryPhrase.cc:    strm << this->op << this->rhs;
+ast/UnaryPhrase.cc:    return parathon_call(this->op->opname(), this->rhs->evaluate(c));
+ast/ValueFloat.cc:    vf->f = f;
+ast/ValueFloat.cc:    strm << this->f;
+ast/ValueFloat.cc:    return new ParathonValue(this->f);
+ast/ValueInt.cc:    vi->i = i;
+ast/ValueString.cc:    vs->s = str;
+ast/ValueString.cc:    strm << "\"" << this->s << "\"";
+ast/WhileStatement.cc:    ws->test = tp;
+ast/WhileStatement.cc:    ws->suite = s;
+ast/WhileStatement.cc:    strm << "while " << this->test << ":" << this->suite; 
+ast/WhileStatement.cc:    while (this->test->evaluate(c)->isTrue())
+ast/WhileStatement.cc:        r = this->suite->evaluate(c);
+ast/XorExpression.cc:    e->lhs = ae;
+ast/XorExpression.cc:    e->op = op;
+ast/XorExpression.cc:    e->rhs = xe;
+ast/XorExpression.cc:    return parathon_call("__xor__", this->lhs->evaluate(c), this->rhs->evaluate(c));
+ast/autogen.py:    It is assumed that: 1 class -> 1 rule of the grammer.
+ast/autogen.py:    These files must be beautiful - i.e. each function declaration on its own line
+ast/autogen.py:re_uc=re.compile(r"[A-Z]")
+ast/autogen.py:    (typ, meth) = (" ".join(blah[:-1]), blah[-1])
+ast/autogen.py:        self.classname = filename[filename.rindex("/")+1:-3]
+ast/autogen.py:                #print self.constructors[-1]
+ast/autogen.py:                #print self.publics[-1]
+ast/autogen.py:                args = ", ".join("$%s" % (x+1) for x in range(len(f)-2))
+ast/autogen.py:                yield "%s { $$ = %s::parse(%s); $$->linenum = line_num; }" % (rule, self.classname, args)
+ast/autogen.py:%%parse-param { ParathonContext* context }
+ast/autogen.py:         | all_input error TOK_NEWLINE { if (context->interpreterMode) yyerrok; else return 0; }
+ast/autogen.py:         | all_input TOK_INDENT error TOK_NEWLINE { if (context->interpreterMode) yyerrok; else return 0; }
+buffer.c:    ret = b->string;
+buffer.c:    b->used = b->length = 0;
+buffer.c:    b->string = NULL;
+buffer.c:    if (b->string)
+buffer.c:        free(b->string);
+buffer.c: * return 0 on success (b->string can be appended to)
+buffer.c:    unsigned int new_length = b->length;
+buffer.c:    if (b->used + length >= UINT_MAX)
+buffer.c:    while (b->used + length >= new_length) 
+buffer.c:    new_string = realloc(b->string, new_length * sizeof(char));
+buffer.c:        b->string = new_string;
+buffer.c:    puts(b->string == NULL ? "" : b->string);
+buffer.c:    fputs(b->string == NULL ? "" : b->string, f);
+buffer.c:    strncpy(b->string + b->used, s, len + 1);
+buffer.c:    b->used += len;
+buffer.c:    b->string[b->used++] = c;
+buffer.c:    b->string[b->used] = '\0';
+buffer.c:    int written = vsnprintf(b->string + b->used, b->length - b->used, fmt, args);
+buffer.c:    if (b->used + written >= b->length)
+buffer.c:        vsnprintf(b->string + b->used, b->length - b->used, fmt, args);
+buffer.c:    b->used += written;
+builtins.cc:    if ((result = val->lookup(str)))
+builtins.cc:    ParathonValue* klass = val->lookup("__class__");
+builtins.cc:        if ((result = klass->lookup(str)))
+builtins.cc:            return result->bindIfApplicable(val);
+builtins.cc:        if ((result = klass->lookup("__mro__")))
+builtins.cc:        if (result->die->filled_children)
+builtins.cc:            return result->call(new ParathonValue(str, die_wrapper::builtin("parathon_string")))->bindIfApplicable(val);
+builtins.cc:            return result->call(new ParathonValue(str, die_wrapper::builtin("parathon_string")));
+builtins.cc:    dwarf::encap::dieset* ds =*(dwarf::encap::dieset**)v_ds->value;
+builtins.cc:    void * ns = *(void**)v_ns->value;
+builtins.cc:        ParathonContext *newcontext = new ParathonContext(c->builtins);
+builtins.cc:        nc->assign("__namespace__", new ReadOnlyProperty((void *)dlopen(nsym, RTLD_NOW)));
+builtins.cc:        nc->assign("__dieset__", new ReadOnlyProperty((void *)&(new dwarf::encap::file(fileno(f)))->ds()));
+builtins.cc:        nc->assign("__getattr__", ParathonValue::get((void *)getattr_cfile, die_wrapper::builtin("__getattr__")));
+builtins.cc:        nc->assign("__file__", new ParathonValue(nsym));
+builtins.cc://        nc->assign("__str__", ParathonValue::get((void *)str_cfile, die_wrapper::builtin("__str__")));
+builtins.cc:        //nc->assign("__repr__", ParathonValue::get((void *)str_cfile, die_wrapper::builtin("__str__")));
+builtins.cc:    builtins->assign((char*)"__eval__", new ReadOnlyProperty((void*)__eval__));
+builtins.cc:    builtins->assign((char*)"__import__", new ReadOnlyProperty((void*)__import__));
+builtins.cc:    builtins->assign((char*)"__getattr__", new ReadOnlyProperty((void*)__getattr__));
+builtins.cc:    builtins->assign((char*)"int", __import__((char*)"int", builtins));
+builtins.cc:    builtins->assign((char*)"float", __import__((char*)"float", builtins));
+builtins.hh:#define BUILTIN__eval__(c) ((ParathonValue *(*)(char *,ParathonValue*))((c)->lookup("__eval__")->value))
+builtins.hh:#define BUILTIN__import__(c) ((ParathonValue *(*)(char *,ParathonValue*))((c)->lookup("__import__")->value))
+builtins.hh:#define BUILTIN__getattr__(c) ((ParathonValue *(*)(ParathonValue *, char *))((c)->lookup("__getattr__")->value))
+closures.cc:    ffi_type ** arg_types = (ffi_type**)malloc(sizeof(ffi_type*) * (ocif->nargs + 1));
+closures.cc:    void ** newargs = (void **)malloc(sizeof(void*) * (ocif->nargs + 1));
+closures.cc:    arg_types[0] = data->bound_ffi_type;
+closures.cc:    newargs[0] = data->bound_arg;
+closures.cc:    memcpy(&(arg_types[1]), ocif->arg_types, sizeof(ffi_type*) * ocif->nargs);
+closures.cc:    memcpy(&(newargs[1]), oargs, sizeof(void *) * ocif->nargs);
+closures.cc:    if (ffi_prep_cif(&newcif, ocif->abi, ocif->nargs+1, ocif->rtype, arg_types) == FFI_OK)
+closures.cc:        ffi_call(&newcif, data->bound_function, ret, newargs);
+die_wrapper.cc:// FIXME - this file is becoming a mess rapidly!
+die_wrapper.cc:    this->dieset = ds;
+die_wrapper.cc:    this->start = start;
+die_wrapper.cc:    this->offset = offset;
+die_wrapper.cc:    this->filled_children = 0;
+die_wrapper.cc:    std::cout << *this->die() << std::endl;
+die_wrapper.cc:        ds_builtins = &(new dwarf::encap::file(fileno(fil_builtins)))->ds();
+die_wrapper.cc:    if (!this->isFunction())
+die_wrapper.cc:    if (!this->child_length())
+die_wrapper.cc:    ret->filled_children += 1;
+die_wrapper.cc:    die->filled_children = 0;
+die_wrapper.cc:                die->dieset = &ds;
+die_wrapper.cc:                die->start = *start;
+die_wrapper.cc:                die->offset = *i;
+die_wrapper.cc:    die_wrap(this, die->dieset, sym);
+die_wrapper.cc:    this->dieset = ds;
+die_wrapper.cc:    this->start = start;
+die_wrapper.cc:    this->offset = die->offset();
+die_wrapper.cc:    return ((*this->dieset)[this->offset].get_tag() == DW_TAG_subprogram);
+die_wrapper.cc:    dwarf::encap::die* die = &(*this->dieset)[this->offset];
+die_wrapper.cc:        else if ((die->get_tag() == DW_TAG_pointer_type ||
+die_wrapper.cc:                  die->get_tag() == DW_TAG_formal_parameter ) && 
+die_wrapper.cc:            die = &((*this->dieset)[(*die)[DW_AT_type].get_ref().off]);
+die_wrapper.cc:           (this->offset == other->offset &&
+die_wrapper.cc:            this->dieset == other->dieset &&
+die_wrapper.cc:            this->start  == other->start  &&
+die_wrapper.cc:            this->filled_children == other->filled_children) ||
+die_wrapper.cc:           (this->as_ffi() == other->as_ffi());
+die_wrapper.cc:    if (this->die()->get_tag() == DW_TAG_pointer_type)
+die_wrapper.cc:        return other->isSameType(this->type_die());
+die_wrapper.cc:    switch(die()->get_tag())
+die_wrapper.cc:            return this->type_die()->castTo(value, type, result);
+die_wrapper.cc:            switch(type->die()->get_tag())
+die_wrapper.cc:                    return this->castTo(value, type->type_die(), result);
+die_wrapper.cc:                    if (( (*this->die())[DW_AT_byte_size].get_unsigned() * 10 + 
+die_wrapper.cc:                            (*this->die())[DW_AT_encoding].get_unsigned()) ==
+die_wrapper.cc:                        ((*type->die())[DW_AT_byte_size].get_unsigned() * 10 + 
+die_wrapper.cc:                            (*type->die())[DW_AT_encoding].get_unsigned()) )
+die_wrapper.cc:                        memcpy(result, &value, (*this->die())[DW_AT_byte_size].get_unsigned());
+die_wrapper.cc:    dwarf::encap::die_off_list children = (*this->dieset)[this->offset].children();
+die_wrapper.cc:        if ((*this->dieset)[*i].get_tag() == DW_TAG_formal_parameter)
+die_wrapper.cc:    return count - this->filled_children;
+die_wrapper.cc:    return new die_wrapper(this->dieset, this->start, (*this->dieset)[this->offset].children()[index + this->filled_children]);
+die_wrapper.cc:    return this->child(-1);
+die_wrapper.cc:    ffi_type ** args = (ffi_type**)malloc(sizeof(ffi_type *) *this->child_length());
+die_wrapper.cc:    for (unsigned i = 0; i < this->child_length(); i++)
+die_wrapper.cc:        args[i] = this->child(i)->as_ffi();
+die_wrapper.cc:    switch(die->get_tag())
+die_wrapper.cc:            return this->get_ffi_type(&(*this->dieset)[(*die)[DW_AT_type].get_ref().off]);
+die_wrapper.cc:            return this->get_ffi_type(&(*this->dieset)[(*die)[DW_AT_type].get_ref().off]);
+die_wrapper.cc:    dwarf::encap::die* die = &(*this->dieset)[this->offset];
+die_wrapper.cc:        return this->get_ffi_type(&(*this->dieset)[(*die)[DW_AT_type].get_ref().off]);
+die_wrapper.cc:    if (!this->isFunction())
+die_wrapper.cc:        throw ParathonException("Tried to get return type of non-function");
+die_wrapper.cc:    return this->type_die();
+die_wrapper.cc:    if ((*this->die())[DW_AT_type] == dwarf::encap::attribute_value::DOES_NOT_EXIST())
+die_wrapper.cc:        return new die_wrapper(this->dieset, this->start, &(*this->dieset)[(*this->die())[DW_AT_type].get_ref().off]);
+die_wrapper.cc:    dwarf::encap::die* die = &(*this->dieset)[this->offset];
+die_wrapper.cc:        switch(die->get_tag())
+die_wrapper.cc:                die = &(*this->dieset)[(*die)[DW_AT_type].get_ref().off];
+die_wrapper.cc:    return &(*this->dieset)[this->offset];
+gc.c:// http://www.gnu.org/s/libc/manual/html_node/Hooks-for-Malloc.html
+main.cc:        if (c->interpreterMode)
+main.cc:            si->evaluate_print(*c, std::cout);
+main.cc:            si->evaluate(*c);
+main.cc:    return lhs->call(name);
+main.cc:        return lhs->call(name, rhs);
+parathon.h:        return parathon_call(function, this->lhs->evaluate(c), this->rhs->evaluate(c)); \
+parathon.l:    if (!extra->line_read)
+parathon.l:        if (extra->finished) 
+parathon.l:        if (isatty(fileno(extra->file)))
+parathon.l:            rl_instream = extra->file;
+parathon.l:            extra->line_read = readline("> ");
+parathon.l:            extra->line_read = NULL;
+parathon.l:            extra->length_read = getline(&(extra->line_read), &size_t_size, extra->file);
+parathon.l:            if (extra->length_read == -1)
+parathon.l:                extra->line_read = NULL;
+parathon.l:                extra->length_read = 0;
+parathon.l:        if (! extra->line_read)
+parathon.l:            extra->finished = 1;
+parathon.l:            extra->line_read = (char *)";";
+parathon.l:        else if (*extra->line_read)
+parathon.l:            add_history (extra->line_read);
+parathon.l:        extra->length_read = strlen(extra->line_read);
+parathon.l:    int end_offset = extra->length_read - extra->offset_read + 1;
+parathon.l:        strncpy(buf, extra->line_read + extra->offset_read, end_offset);
+parathon.l:        buf[end_offset - 1] = '\n';
+parathon.l:        extra->line_read = NULL;
+parathon.l:    /* Block side-effects */
+parathon.l: * corresponding to the left-hand margin. Every time an INDENT is emitted,
+parathon.l:    else if (indent_level > extra->indent_stack[extra->current_indent]) 
+parathon.l:        if (++extra->current_indent == INDENT_STACK_LENGTH)
+parathon.l:            extra->indent_stack[extra->current_indent] = indent_level;
+parathon.l:    else if (indent_level < extra->indent_stack[extra->current_indent]) 
+parathon.l:        if (extra->current_indent <= 0)
+parathon.l:        else if (indent_level > extra->indent_stack[extra->current_indent - 1])
+parathon.l:            --extra->current_indent;
+parathon.l:            LEX_DEBUG("%s %d", "outdent", extra->indent_stack[extra->current_indent]);
+parathon.l:        LEX_DEBUG("%s %d", "nodent", extra->indent_stack[extra->current_indent]);
+parathon.l:    yyextra->cur_str = new_buffer(); \
+parathon.l:    if (bputs(yyextra->cur_str, yytext)) {\
+parathon.l:    if (bputc(yyextra->cur_str, c)) {\
+parathon.l:    LEX_DEBUG("%s '%s'", "string", yyextra->cur_str->string);\
+parathon.l:    yylval->string = read_and_reset(yyextra->cur_str);\
+parathon.l:    old_buffer(yyextra->cur_str);\
+parathon.l:    if (!bracket_count || !--bracket_count) \
+parathon.l:%option header-file="parathon.l.h"
+parathon.l:%option bison-bridge
+parathon.l:RE_FLOAT [0-9]+(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)
+parathon.l:RE_OCT [0-7]+
+parathon.l:RE_DEC [1-9][0-9]*
+parathon.l:RE_HEX 0x[0-9A-Fa-f]+
+parathon.l:RE_NAME [_a-zA-Z][_a-zA-Z0-9]*
+parathon.l:            yyless(yyleng - 1);
+parathon.l:            yyless(yyleng - 1);
+parathon.l:        yylval->float_val = number;
+parathon.l:        yylval->int_val = number;
+parathon.l:"-"  return TOK_MINUS;
+parathon.l:    yylval->name = strdup(yytext);
+parathon.l:<RSTR6,STR6>{ // """6-quoted string"""
+parathon.l:<RSTR1,STR1,RSTR2,STR2>{ // single-line strings
+parathon.l:    SYNTAX_ERROR_("End of line within single-quoted string.")
+parathon.l:<RSTR3,STR3,RSTR6,STR6>{ // multi-line strings
+parathon.l:<STR1,STR2,STR3,STR6>{ // All strings - backslash escapes from http://www.python.org/doc/2.5.4/ref/strings.html
+parathon.l:\\x[0-9A-Fa-f]{2} {
+parathon.l:\\[0-7]{1,3} {
+parathon.l:<RSTR1,RSTR2,RSTR3,RSTR6>{ // Raw strings - backslashes are literals (but need special handling for \" etc.)
+runtime/builtin_types.c: * This is un-ideal, to say the least, it exists to allow us to find the types we expect
+runtime/builtin_types.c: * for various builtin functions - just in case they've been customised.
+runtime/float.c:binary(__sub__, -);
+runtime/float.c:unary(__neg__, -);
+runtime/hashtable.c:    h->table = (struct entry **)malloc(sizeof(struct entry*) * size);
+runtime/hashtable.c:    if (NULL == h->table) { free(h); return NULL; } /*oom*/
+runtime/hashtable.c:    memset(h->table, 0, size * sizeof(struct entry *));
+runtime/hashtable.c:    h->tablelength  = size;
+runtime/hashtable.c:    h->primeindex   = pindex;
+runtime/hashtable.c:    h->entrycount   = 0;
+runtime/hashtable.c:    h->hashfn       = hashf;
+runtime/hashtable.c:    h->eqfn         = eqf;
+runtime/hashtable.c:    h->loadlimit    = (unsigned int) ceil(size * max_load_factor);
+runtime/hashtable.c:     * - logic taken from java 1.4 hashtable source */
+runtime/hashtable.c:    unsigned int i = h->hashfn(k);
+runtime/hashtable.c:    if (h->primeindex == (prime_table_length - 1)) return 0;
+runtime/hashtable.c:    newsize = primes[++(h->primeindex)];
+runtime/hashtable.c:        for (i = 0; i < h->tablelength; i++) {
+runtime/hashtable.c:            while (NULL != (e = h->table[i])) {
+runtime/hashtable.c:                h->table[i] = e->next;
+runtime/hashtable.c:                index = indexFor(newsize,e->h);
+runtime/hashtable.c:                e->next = newtable[index];
+runtime/hashtable.c:        free(h->table);
+runtime/hashtable.c:        h->table = newtable;
+runtime/hashtable.c:                   realloc(h->table, newsize * sizeof(struct entry *));
+runtime/hashtable.c:        if (NULL == newtable) { (h->primeindex)--; return 0; }
+runtime/hashtable.c:        h->table = newtable;
+runtime/hashtable.c:        memset(newtable[h->tablelength], 0, newsize - h->tablelength);
+runtime/hashtable.c:        for (i = 0; i < h->tablelength; i++) {
+runtime/hashtable.c:                index = indexFor(newsize,e->h);
+runtime/hashtable.c:                    pE = &(e->next);
+runtime/hashtable.c:                    *pE = e->next;
+runtime/hashtable.c:                    e->next = newtable[index];
+runtime/hashtable.c:    h->tablelength = newsize;
+runtime/hashtable.c:    h->loadlimit   = (unsigned int) ceil(newsize * max_load_factor);
+runtime/hashtable.c:    return -1;
+runtime/hashtable.c:    return h->entrycount;
+runtime/hashtable.c:    /* This method allows duplicate keys - but they shouldn't be used */
+runtime/hashtable.c:    if (++(h->entrycount) > h->loadlimit)
+runtime/hashtable.c:         * -- we may not have memory for a larger table, but one more
+runtime/hashtable.c:    if (NULL == e) { --(h->entrycount); return 0; } /*oom*/
+runtime/hashtable.c:    e->h = hash(h,k);
+runtime/hashtable.c:    index = indexFor(h->tablelength,e->h);
+runtime/hashtable.c:    e->k = k;
+runtime/hashtable.c:    e->v = v;
+runtime/hashtable.c:    e->next = h->table[index];
+runtime/hashtable.c:    h->table[index] = e;
+runtime/hashtable.c:    return -1;
+runtime/hashtable.c:    index = indexFor(h->tablelength,hashvalue);
+runtime/hashtable.c:    e = h->table[index];
+runtime/hashtable.c:        if ((hashvalue == e->h) && (h->eqfn(k, e->k))) return e->v;
+runtime/hashtable.c:        e = e->next;
+runtime/hashtable.c:    index = indexFor(h->tablelength,hash(h,k));
+runtime/hashtable.c:    pE = &(h->table[index]);
+runtime/hashtable.c:        if ((hashvalue == e->h) && (h->eqfn(k, e->k)))
+runtime/hashtable.c:            *pE = e->next;
+runtime/hashtable.c:            h->entrycount--;
+runtime/hashtable.c:            v = e->v;
+runtime/hashtable.c:            freekey(e->k);
+runtime/hashtable.c:        pE = &(e->next);
+runtime/hashtable.c:        e = e->next;
+runtime/hashtable.c:    struct entry **table = h->table;
+runtime/hashtable.c:        for (i = 0; i < h->tablelength; i++)
+runtime/hashtable.c:            { f = e; e = e->next; freekey(f->k); free(f->v); free(f); }
+runtime/hashtable.c:        for (i = 0; i < h->tablelength; i++)
+runtime/hashtable.c:            { f = e; e = e->next; freekey(f->k); free(f); }
+runtime/hashtable.c:    free(h->table);
+runtime/hashtable.h: *      {     exit(-1);               }
+runtime/hashtable.h:/* Macros may be used to define type-safe(r) hashtable access functions, with
+runtime/hashtable.h: * - if performance is important, it may be worth switching back to the
+runtime/hashtable.h: * This just requires switching to some simple alternative defines - eg:
+runtime/hashtable.h: * @param   k   the key - hashtable claims ownership and will free on removal
+runtime/hashtable.h: * @param   v   the value - does not claim ownership
+runtime/hashtable.h: * @return      non-zero for successful insertion
+runtime/hashtable.h: * The value returned when using a duplicate key is undefined -- when
+runtime/hashtable.h: * @param   k   the key to search for  - does not claim ownership
+runtime/hashtable.h: * @param   k   the key to search for  - does not claim ownership
+runtime/hashtable_private.h:    return (hashvalue & (tablelength - 1u));
+runtime/int.c:binary(__sub__, -);
+runtime/int.c:unary(__neg__, -);
+runtime/list.c:    if (index > 0 && index < l->length)
+runtime/list.c:        return l->data[index];
+runtime/list.c:    l->data = (void **)realloc(l->data, l->length+1);
+runtime/list.c:    l->data[l->length++] = datum;
+runtime/list.c:    l->data = (void **)realloc(l->data, l->length + k->length);
+runtime/list.c:    memcpy(&l->data[l->length], k->data, k->length * sizeof(void *));
+runtime/list.c:    l->length += k->length;

@@ -1,0 +1,31 @@
+import os
+env = Environment()
+env.Append(BUILDERS = {'Autogen': Builder(action='python ast/autogen.py ast > /tmp/aaa')})
+env.Append(BUILDERS = {'Ctags': Builder(action='ctags -R --c++-kinds=+p --fields=+iaS --extra=+q .')})
+env.Autogen(['ast.h', 'parathon.yy'], ['ast/autogen.py', Glob('ast/*.cc')])
+env.Ctags(target='ctags', source=['parathon'])
+
+#g = CXXFile(target=['parathon.yy.cc', 'parathon.yy.hh'], source='parathon.yy', YACCFLAGS='-d')
+#Clean(g, 'parathon.yy.hh')
+#h = CFile(target=['parathon.l.cc','parathon.l.h'], source='parathon.l', FLEXFLAGS=['--header-file','parathon.l.h'])
+#Clean(h, 'parathon.l.h')
+Program(target="parathon",
+    source=['main.cc', 'parathon.l.cc', 'parathon.yy.cc', Glob('Parathon*.cc'), "die_wrapper.cc", Glob('ast/*.cc'), 'buffer.c', 'ast.cc', 'builtins.cc', "dwarfpp/encap.o", "dwarfpp/lib.o", "dwarfpp/spec.o", "../libsrk31c++/indenting_ostream.o", "runtime/list.c", "closures.cc"],
+    LIBS=["fl", "readline", "ffi", "dwarf", "elf", "gc"],
+    INCLUDES=[".", "../ffi/include/ffi.h"],
+    CCFLAGS=["-Wall", ["-I" + os.path.realpath(os.curdir), "-I../ffi/include", "-I/home/srk31/scratch/opt/include", "-I/home/srk31/opt/include", "-g", "-fPIC"]],
+    CFLAGS=["-Wall", "-g"],
+    LDFLAGS=["-L./dwarfpp", "-L../libsrk31c++", "-L./runtime", "-L/home/srk31/scratch/opt/lib"]
+)
+
+SharedLibrary(Glob("runtime/int.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SharedLibrary(Glob("runtime/float.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SharedLibrary(Glob("runtime/string.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SharedLibrary(Glob("runtime/builtin_types.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SharedLibrary(Glob("runtime/list.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SharedLibrary(Glob("runtime/buffer.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SharedLibrary(Glob("runtime/test.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SharedLibrary(Glob("runtime/os.c"), INCLUDES=[os.path.realpath(os.curdir)], CFLAGS="-g")
+SharedLibrary(Glob("runtime/levenshtein.c"), INCLUDES=[os.path.realpath(os.curdir), "/usr/include/python2.5/"], CFLAGS=["-g","-I/usr/include/python2.5"])
+
+Default("ctags", "parathon", "runtime")
