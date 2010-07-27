@@ -1,24 +1,17 @@
-CFLAGS := -I${HOME}/work/devel/dwarf/libdwarfpp/include
+CXXFLAGS += -Iparser -I.
+CXXFLAGS += -std=c++0x -g3 -fno-eliminate-unused-debug-types
 
-CXXFLAGS := -I${HOME}/work/devel/dwarf/libdwarfpp/include
-CXXFLAGS += -I${HOME}/work/devel/libsrk31c++
-CXXFLAGS += -I${HOME}/work/devel/c++-fileno/include
-CXXFLAGS += -I${HOME}/work/devel/cake
-CXXFLAGS += -I${HOME}/scratch/opt/include
-CXXFLAGS += -I${HOME}/opt/include
-CXXFLAGS += -Iparser
-CXXFLAGS += -std=c++0x -g3
-CXXFLAGS += -Wl,-R$$(readlink -f $${HOME}/work/devel/dwarf/libdwarfpp/src)
-CXXFLAGS += -Wl,-R$$(readlink -f $${HOME}/work/devel/cake/libcake)
+LDLIBS += -lfl -lreadline -lffi -ldwarfpp -lsrk31c++ -lc++fileno -ldwarf -lelf -lgc -lstdc++ -lunwind -lunwind-ptrace -lunwind-x86 -lprocessimage -lboost_regex
 
-LIBS += -L${HOME}/opt/lib -L${HOME}/scratch/opt/lib 
-LIBS += -L${HOME}/work/devel/dwarf/libdwarfpp/src
-LIBS += -L${HOME}/work/devel/libsrk31c++/
-LIBS += -L${HOME}/work/devel/cake/libcake
-LIBS += -L${HOME}/work/devel/c++-fileno/lib
-LIBS += -lfl -lreadline -lffi -ldwarfpp -lsrk31c++ -lfileno -ldwarf -lelf -lgc -lstdc++ -lcake
+C_SRC := buffer.c
+CC_SRC := main.cc ops.cc
 
-CC_SRC := main.cc
+default: dwarfpy
+
+.PHONY: clean
+clean:
+	rm -f dwarfpy *.o .*.d
+	$(MAKE) -C parser clean
 
 CC_DEPS := $(patsubst %.cc,.%.d,$(CC_SRC))
 CPP_DEPS :=
@@ -27,10 +20,8 @@ DEPS := $(CC_DEPS) $(CPP_DEPS) $(C_DEPS)
 
 DEPS := $(CC_DEPS) $(C_DEPS) $(CPP_DEPS)
 
-default: dwarfpy
-
-.PHONY: parser
-parser: 
+.PHONY: parser-recursive
+parser-recursive: 
 	$(MAKE) -C parser
 
 $(CPP_DEPS): .%.d : %.cpp
@@ -42,5 +33,5 @@ $(C_DEPS): .%.d : %.c
 
 include $(DEPS)
 
-dwarfpy: parser
-	$(CXX) $(CXXFLAGS) -o "$@" main.cc parser/*.o parser/ast/*.o $(LIBS) 
+dwarfpy: parser-recursive buffer.o ops.o
+	$(CXX) $(CXXFLAGS) -o "$@" main.cc buffer.o ops.o parser/*.o parser/ast/*.o $(LDFLAGS) $(LDLIBS) 

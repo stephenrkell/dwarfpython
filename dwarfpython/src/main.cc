@@ -10,12 +10,13 @@
 #include <dwarfpp/encap_adt.hpp>
 
 dwarf::encap::dieset builtins(dwarf::spec::DEFAULT_DWARF_SPEC);
-val valNone = { false, { i_ptr: 0 }, 0 };
+val valNone = { false, { i_ptr: 0 }, boost::shared_ptr<dwarf::spec::type_die>() };
 const val& None = valNone;
-val valNotImplemented = { false, { i_ptr: (void*)1 }, 0 };
+val valNotImplemented = { false, { i_ptr: (void*)1 }, boost::shared_ptr<dwarf::spec::type_die>() };
 const val& NotImplemented = valNotImplemented;
-val valInvalid = { false, { i_ptr: 0 }, 0 };
+val valInvalid = { false, { i_ptr: 0 }, boost::shared_ptr<dwarf::spec::type_die>() };
 const val& Invalid = valInvalid;
+const char *executable_path;
 dwarf::encap::base_type_die *p_builtin_int_type = 0; // overwritten in init
 dwarf::encap::base_type_die *p_builtin_double_type = 0; // overwritten in init
 dwarf::encap::base_type_die *p_builtin_char_type = 0;
@@ -24,7 +25,7 @@ dwarf::encap::pointer_type_die *p_builtin_const_char_pointer_type = 0;
 std::string s_builtins("builtins");
 std::string s_int("int");
 std::string s_double("double");
-std::string s_double("char");
+std::string s_char("char");
 void init() __attribute__((constructor));
 void init()
 {
@@ -33,42 +34,43 @@ void init()
      * shared_ptrs out of them, and will also add them to the dieset. */
     auto p_compile_unit_die = new dwarf::encap::compile_unit_die(
     	dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins[0UL]), s_builtins);
-	//auto iter = builtins.insert(std::make_pair(1UL, p_compile_unit_die));
 
     auto p_pointer_type_die = new dwarf::encap::pointer_type_die(
-    	dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins[1UL]), boost::optional<const std::string&>());
-    //builtins.insert(std::make_pair(2UL, p_pointer_type_die));
+    	dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins[1UL]), 
+        boost::optional<const std::string&>());
 
     auto p_int_die = new dwarf::encap::base_type_die(
     	dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins[1UL]), s_int);
     p_int_die->set_byte_size(sizeof(int)).set_encoding(DW_ATE_signed);
-    //builtins.insert(std::make_pair(3UL, p_int_die));
 
     auto p_double_die = new dwarf::encap::base_type_die(
     	dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins[1UL]), s_double);
     p_double_die->set_byte_size(sizeof(double)).set_encoding(DW_ATE_float);
-    //builtins.insert(std::make_pair(4UL, p_double_die));
     
     // fix up the DIE ptrs in None and NotImplemented to point at the void* DIE
-    valNone.descr = builtins[2].get();
-    valNotImplemented.descr = builtins[2].get();
+    valNone.descr = builtins[2];
+    valNotImplemented.descr = builtins[2];
     // note: descr ptr in Invalid stays 0, as that's what distinguishes it!
     
     // store pointers to the builtin int and double types, for pointer-comparison
-    p_builtin_int_type = dynamic_cast<dwarf::encap::base_type_die*>(builtins[3].get());
-    p_builtin_double_type = dynamic_cast<dwarf::encap::base_type_die*>(builtins[4].get());
+    p_builtin_int_type = boost::dynamic_pointer_cast<dwarf::encap::base_type_die>(builtins[3]).get();
+    p_builtin_double_type = boost::dynamic_pointer_cast<dwarf::encap::base_type_die>(builtins[4]).get();
 
     auto p_char_die = new dwarf::encap::base_type_die(
-    	dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins[1UL]), s_double);
+    	dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins[1UL]), s_char);
     p_double_die->set_byte_size(1).set_encoding(DW_ATE_signed_char);
 
     auto p_const_char_die = new dwarf::encap::const_type_die(
     	dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins[1UL]), boost::optional<const std::string&>());
-    p_const_char_die->set_type(*p_char_die);
+    p_const_char_die->set_type(
+    	boost::dynamic_pointer_cast<dwarf::spec::type_die>(
+        	p_char_die->get_this()));
     
     auto p_const_char_pointer_type_die = new dwarf::encap::pointer_type_die(
     	dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins[1UL]), boost::optional<const std::string&>());
-    p_const_char_pointer_type_die->set_type(*p_const_char_die);
+    p_const_char_pointer_type_die->set_type(
+    	boost::dynamic_pointer_cast<dwarf::spec::type_die>(
+        	p_const_char_die->get_this()));
 }
 
 jmp_buf JumpBuffer;
@@ -77,13 +79,13 @@ void interrupt_handler(int signal)
     switch(signal)
     {
         case SIGSEGV:
-            std::cout << "Caught segmentation fault. Be careful!" << std::endl;
+            std::cout << "Caught segmentation fault!" << std::endl;
             break;
         case SIGFPE:
             std::cout << "Floating point exception. Division by zero?" << std::endl;
             break;
         case SIGILL:
-            std::cout << "Illegal instruction executed. Be careful!" << std::endl;
+            std::cout << "Illegal instruction executed!" << std::endl;
             break;
     }
     longjmp(JumpBuffer,1);
@@ -120,6 +122,7 @@ int main(int argc, char ** argv)
 //     //signal(SIGILL, interrupt_handler);
 // 
 //     initialize_builtins(&ParathonValue::builtins);
+	executable_path = argv[0];
     std::cout << "This is DwarfPython.\nCtrl-D exits." << std::endl;
     ParathonContext globals/*(ParathonValue::builtins)*/;
     globals.interpreterMode = true;
@@ -134,10 +137,13 @@ int main(int argc, char ** argv)
     return result;
 }
 
+const char *Operator::opname()
+{
+    return "__undefined__";
+}
+
 void evaluate(SingleInput *si, ParathonContext* c)
 {
-//    std::cout << si;
-//    std::cerr << "Trying to evaluate";
     try
     {
         if (c->interpreterMode)
@@ -171,14 +177,4 @@ val parathon_call(const char * name, val lhs, val rhs)
         //return lhs->call(name, rhs);
         return None;
     }
-}
-
-const char *Operator::opname()
-{
-    return "__YUCK__";
-}
-
-void initialise()
-{
-
 }

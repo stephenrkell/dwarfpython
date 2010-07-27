@@ -1,29 +1,27 @@
-OBJS := parathon.l.o parathon.yy.o $(patsubst %.cc,%.o,$(wildcard Parathon*.cc))
-OBJS += die_wrapper.o buffer.o ast.o builtins.o runtime/list.o closures.o
-CFLAGS := -I${HOME}/work/devel/dwarf/libdwarfpp/include
-CXXFLAGS := -I${HOME}/work/devel/dwarf/libdwarfpp/include
-CXXFLAGS += -I${HOME}/work/devel/libsrk31c++
-CXXFLAGS += -I${HOME}/work/devel/c++-fileno/include
-CXXFLAGS += -I${HOME}/work/devel/cake
-CXXFLAGS += -I${HOME}/scratch/opt/include
-CXXFLAGS += -I${HOME}/opt/include
+OBJS := parathon.l.o parathon.yy.o ast.o $(patsubst %.cc,%.o,$(wildcard ast/*.cc))
+#$(warning OBJS is $(OBJS))
 CXXFLAGS += -std=c++0x -g3
-LIBS += -lfl -lreadline -lffi -ldwarf -lelf -lgc
+CXXFLAGS += -I. -I..
 
-CC_SRC := parathon.l.cc parathon.yy.cc ast.cc ops.cc
+LDLIBS += -lfl -lreadline -lffi -ldwarf -lelf -lgc
+
+CC_SRC := parathon.l.cc parathon.yy.cc
 CPP_SRC :=
-C_SRC := buffer.c
+C_SRC :=
+
+default: $(OBJS)
+
+.PHONY: clean
+clean:
+	rm -f *.o .*.d ast/*.o ast/.*.d
 
 CC_DEPS := $(patsubst %.cc,.%.d,$(CC_SRC))
 CPP_DEPS :=
 C_DEPS += $(patsubst %.c,.%.d,$(C_SRC))
+
 DEPS := $(CC_DEPS) $(CPP_DEPS) $(C_DEPS)
 
-default: parathon.l.o parathon.yy.o buffer.o ast ast.o ops.o
-
-.PHONY: ast
-ast:
-	$(MAKE) -C ast
+default: $(OBJS)
 
 $(CPP_DEPS): .%.d : %.cpp
 	g++ -MM $(CXXFLAGS) "$<"  > "$@"
@@ -43,6 +41,8 @@ parathon.l.cc: parathon.yy.cc
 parathon.yy.cc parathon.yy.hh: parathon.yy
 	bison -d parathon.yy --output-file=parathon.yy.cc
 
+# Old stuff left over from parathon -- can remove this!
+# Leaving it until I can see where libint/libfloat/libstring fit in new design.
 parathon: 
 	 g++ -o parathon \
 	 main.o \

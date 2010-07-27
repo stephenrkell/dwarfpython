@@ -24,6 +24,8 @@ extern dwarf::encap::base_type_die *p_builtin_char_type;
 extern dwarf::encap::const_type_die *p_builtin_const_char_type;
 extern dwarf::encap::pointer_type_die *p_builtin_const_char_pointer_type;
 
+/* defined in main.cc */
+extern const char *executable_path;
 
 struct val
 {
@@ -34,12 +36,12 @@ struct val
         double i_double;
         void *i_ptr;
     };
-    dwarf::spec::basic_die *descr;
+    boost::shared_ptr<dwarf::spec::basic_die> descr;
     bool operator==(const val& v) 
     { return this->is_immediate == v.is_immediate &&
-         (this->is_immediate && this->descr == p_builtin_int_type) ? 
+         (this->is_immediate && this->descr.get() == p_builtin_int_type) ? 
        		(this->i_int == v.i_int)
-       : (this->is_immediate && this->descr == p_builtin_double_type) ?
+       : (this->is_immediate && this->descr.get() == p_builtin_double_type) ?
             (this->i_double == v.i_double)
        : (!this->is_immediate && this->i_ptr == v.i_ptr);
 	}
@@ -56,63 +58,14 @@ extern const val& NotImplemented;
  * in order to grab the builtin DWARF type die for a pointer-to-unspecified. */
 extern dwarf::encap::dieset builtins;
 
-//#include "runtime/types.h"
-//#include "die_wrapper.hh"
 #include "lexer.h"
 #include <ffi.h>
 
 #include <sstream>
 using std::string;
 
-//class ParathonContext;
+/* FIXME: stuff below is still in transition from Parathon -> DwarfPython .*/
 
-// class ParathonValue
-// {
-//     public:
-//         int type;
-//         void * nspace;
-//         die_wrapper* die;
-//         void * value;
-//         void * _value;
-//         const char * prefix;
-// 
-//         ParathonValue();
-//         ParathonValue(void *value); // FIXME
-// 
-//         ParathonValue(char * c);
-//         ParathonValue(parathon_int i);
-//         ParathonValue(parathon_float f);
-//         ParathonValue(void *value, die_wrapper* die);
-//         bool isTrue();
-//         bool isFunction();
-//         unsigned int length();
-//         virtual void toStream(std::ostream& strm);
-//         ParathonValue *call(const char *);
-//         ParathonValue *call(const char *, ParathonValue*);
-//         ParathonValue *call(ParathonValue*);
-//         ParathonValue *call();
-//         virtual ParathonValue *call(std::vector<ParathonValue*>*);
-//         ParathonValue *bindIfApplicable(ParathonValue*);
-//         void *castTo(die_wrapper*);
-//         ffi_type *type_ffi();
-// 
-//         ParathonValue *lookup(string);
-//         void assign(string, ParathonValue *value);
-//         bool localise(string);
-//         bool interpreterMode;
-//         static ParathonContext builtins;
-// 
-//         ParathonValue *parent;
-//         std::map<std::string, ParathonValue *> store;
-// 
-//         static std::map<void *, ParathonValue *> all_instances;
-//         static ParathonValue *retrieveInstance(void *);
-//         static ParathonValue *get(void *, die_wrapper* die);
-//         static ParathonValue *getValue(void *, die_wrapper* die);
-//         void registerInstance(void *, ParathonValue *);
-// 
-// }
-// ;
 class ParathonException
 {
     public: string message;
@@ -128,11 +81,12 @@ class ParathonException
 	    s << message;
 	    this->message = s.str();
     }
-}
-;
+};
+
 class ParathonReturn
 {
-    public: val value;
+public: 
+    val value;
     ParathonReturn(val value) { this->value = value; }
 }
 ;
@@ -148,6 +102,8 @@ class ParathonContext : public ParathonValue
         ParathonContext(ParathonValue *);
 }
 ;*/
+        
+/* This is the interpreter state. */
 struct ParathonContext
 {
   	bool interpreterMode; /* whether we're acting as a REPL or not */

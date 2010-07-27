@@ -3,7 +3,8 @@
 #include "parathon.h"
 #include "ops.h"
 
-#include <libcake/process.hpp>
+#include <processimage/process.hpp>
+using namespace dwarf;
 
 bool is_true(val value) { return false; }
 
@@ -36,15 +37,16 @@ bool lookup_name_pred(spec::basic_die& d)
 val lookup_name(ParathonContext& context, const std::string& name) 
 {
 	/* The context records which portions of the process map namespace
-     * are visible. */
+     * (i.e. which libraries' DWARF records) are visible. */
      
-    // HACK to test: import libcake
+    // HACK to test: if we haven't executed (implemented) any "import" statements yet,
+    // import our own DWARF info so we can test name resolution.
     if (context.import_list.size() == 0)
     {
     	context.import_list.insert(
         	std::make_pair(
-            	std::string("cake"), 
-                std::string("/auto/homes/srk31/work/devel/cake/libcake/libcake.so")
+            	std::string("_self"), 
+                std::string(executable_path)
             )
         );
     }
@@ -80,16 +82,19 @@ val lookup_name(ParathonContext& context, const std::string& name)
     {
 		//std::cerr << "Found a die... breakpoint here please." << std::endl;
     	//return 0;
-        void *obj = get_object_from_die(/* FIXME: get vaddr from ParathonContext */
+        process_image::addr_t p_obj = image.get_object_from_die(/* FIXME: get vaddr from ParathonContext */
         	boost::dynamic_pointer_cast<spec::with_runtime_location_die>(result), 0);
-        val r = { false, { i_ptr: obj }, result.get() };
+        val r = { false, { i_ptr: reinterpret_cast<void*>(p_obj) }, result };
         return r;
     }
 }
 
 void print_value_to_stream(void *value, std::ostream& s) 
 {
-	val v = (val) { false, { .i_ptr = value }, image.discover_object_descr(value) };
+	val v = { false, 
+              { i_ptr: value }, 
+              image.discover_object_descr(reinterpret_cast<process_image::addr_t>(value)) 
+            };
 	print_value_to_stream(v, s);
 }
 
@@ -97,17 +102,12 @@ void print_value_to_stream(val v, std::ostream& s)
 { 
 	if (v.is_immediate)
     {
-    	switch (v.descr)
-        {
-        	case p_builtin_int_type:
-            	s << val.i_int;
-            	break;
-            case p_builtin_double_type:
-            	s << val.i_double;
-            	break;
-        	default:
-            	s << "(some value)";
-        }
+    	if (v.descr.get() == p_builtin_int_type)
+        { s << v.i_int; }
+        else if (v.descr.get() == p_builtin_double_type)
+        { s << v.i_double; }
+        else
+        { s << "(some value)"; }
     }
     else s << "(some value)"; 
 }

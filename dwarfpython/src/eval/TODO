@@ -1,0 +1,5 @@
+FIXME: move all the evaluate() functions out of the ast/*.cc files and into their own cc 
+files here. This is a good idea not only because parsing and evaluating are different 
+things, but because the ast/*.cc files get read by the autogen.py so are subject to layout 
+constraints, which may become a pain once evaluate() code gets hairy.
+
