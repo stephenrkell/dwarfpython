@@ -16,5 +16,5 @@ void ValueString::toStream(std::ostream& strm)
 }
 val ValueString::evaluate(ParathonContext& c)
 {
-	return (val) { true, { i_ptr: s }, p_builtin_const_char_pointer_type };
+    return (val) { true, { i_ptr: s }, p_builtin_const_char_pointer_type };
 }

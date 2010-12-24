@@ -13,7 +13,7 @@ default: $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -f *.o .*.d ast/*.o ast/.*.d
+	rm -f *.o .*.d ast/*.o ast/.*.d ast.h parathon.l.cc parathon.yy.cc parathon.yy
 
 CC_DEPS := $(patsubst %.cc,.%.d,$(CC_SRC))
 CPP_DEPS :=
