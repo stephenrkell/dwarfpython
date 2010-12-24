@@ -27,10 +27,10 @@ token_types = {
 }
 tokens = set()
 
-re_is_def = re.compile(r"([^ ]+ *){2,5}\([^\(\)]*\)")
+re_is_def = re.compile(r"([^[:blank:]]+[[:blank:]]*){2,5}\([^\(\)]*\)")
 re_space = re.compile(r" +")
-re_amp_space = re.compile(r" *([&\*])[^>] *")
-re_uc=re.compile(r"[A-Z]")
+re_amp_space = re.compile(r"[[:blank:]]*([&\*])[^>][[:blank:]]*")
+re_uc = re.compile(r"[A-Z]")
 
 def get_signature_arguments(line):
     after = line[line.find("(")+1:line.find(")")]

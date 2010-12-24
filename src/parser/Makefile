@@ -30,9 +30,11 @@ $(CC_DEPS): .%.d : %.cc
 $(C_DEPS): .%.d : %.c
 	gcc -MM $(CFLAGS) "$<"  > "$@"
 
-include $(DEPS)
+ifneq ($(MAKECMDGOALS),clean)
+-include $(DEPS)
+endif
 
-parathon.yy:
+ast.h parathon.yy: $(wildcard ast/*.cc)
 	python ./autogen.py ast
 
 parathon.l.cc: parathon.yy.cc

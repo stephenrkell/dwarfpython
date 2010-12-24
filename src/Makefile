@@ -31,7 +31,9 @@ $(CC_DEPS): .%.d : %.cc
 $(C_DEPS): .%.d : %.c
 	gcc -MM $(CFLAGS) "$<"  > "$@"
 
-include $(DEPS)
+ifneq ($(MAKECMDGOAL),clean)
+-include $(DEPS)
+endif
 
 dwarfpy: parser-recursive buffer.o ops.o
 	$(CXX) $(CXXFLAGS) -o "$@" main.cc buffer.o ops.o parser/*.o parser/ast/*.o $(LDFLAGS) $(LDLIBS) 
