@@ -1,0 +1,18 @@
+SRC := $(wildcard *.cc)
+
+OBJS := $(patsubst %.cc,%.o,$(SRC))
+
+default: $(OBJS)
+
+.PHONY: clean
+clean:
+	rm -f *.o .*.d 
+
+DEPS := $(patsubst %.cc,.%.d,$(SRC))
+
+$(DEPS): .%.d : %.cc
+	g++ -MM $(CXXFLAGS) "$<"  > "$@"
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(DEPS)
+endif

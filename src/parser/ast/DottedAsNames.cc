@@ -39,7 +39,7 @@ void DottedAsNames::toStream(std::ostream& strm)
         sep = ", ";
     }
 }
-val DottedAsNames::evaluate(ParathonContext& c)
+val DottedAsNames::evaluate()
 {
 /*    std::map<T_NAME, DottedName *>::iterator iter;
     for (iter = this->imports.begin(); iter != this->imports.end(); ++iter)

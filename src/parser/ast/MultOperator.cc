@@ -18,11 +18,11 @@ MultOperator *MultOperator::parse(OpMod *o)
 {
     return o;
 }
-val MultOperator::evaluate(ParathonContext& c)
+val MultOperator::evaluate()
 {
     return None;
 }
-void MultOperator::evaluate_print(ParathonContext& c, std::ostream& strm)
+void MultOperator::evaluate_print( std::ostream& strm)
 {
     return;
 }

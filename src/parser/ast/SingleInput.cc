@@ -25,7 +25,7 @@ SingleInput *SingleInput::parse(FunctionDefinition *function_definition)
 {
     return function_definition;
 }
-void SingleInput::evaluate_print(ParathonContext& c, std::ostream& strm)
+void SingleInput::evaluate_print( std::ostream& strm)
 {
-    strm << this->evaluate(c);
+    strm << this->evaluate();
 }

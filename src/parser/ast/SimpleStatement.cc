@@ -27,19 +27,19 @@ void SimpleStatement::toStream(std::ostream& strm)
     }
 }
 
-void SimpleStatement::evaluate_print(ParathonContext& c, std::ostream& strm)
+void SimpleStatement::evaluate_print( std::ostream& strm)
 {
     for (unsigned i=0; i<this->statements.size(); i++)
     {
-        this->statements[i]->evaluate_print(c, strm);
+        this->statements[i]->evaluate_print(strm);
     }
 }
 
-val SimpleStatement::evaluate(ParathonContext& c)
+val SimpleStatement::evaluate()
 {
     for (unsigned i=0; i<this->statements.size(); i++)
     {
-        this->statements[i]->evaluate(c);
+        this->statements[i]->evaluate();
     }
     return None;
 }

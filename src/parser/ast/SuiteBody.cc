@@ -2,6 +2,7 @@
 /**
  * inherits: Suite
  * protected: std::vector<Statement*> statements;
+ * virtual: val evaluate()
  */
 SuiteBody *SuiteBody::parse(SingleInput *t)
 {
@@ -20,14 +21,4 @@ void SuiteBody::toStream(std::ostream& strm)
     {
         strm << this->statements[i] << std::endl;
     }
-}
-
-val SuiteBody::evaluate(ParathonContext& c)
-{
-    val ret;
-    for (unsigned i=0; i < this->statements.size(); i++)
-    {
-        ret = this->statements[i]->evaluate(c);
-    }
-    return ret;
 }

@@ -1,7 +1,7 @@
 #include "ast.h"
 /**
  * inherits: BasePhrase
- * private: parathon_int i;
+ * private: int i;
  */
 
 ValueInt *ValueInt::parse(T_INTEGER i)
@@ -14,7 +14,7 @@ void ValueInt::toStream(std::ostream& strm)
 {
     strm << i;
 }
-val ValueInt::evaluate(ParathonContext& c)
+val ValueInt::evaluate()
 {
-    return (val) { true, { i_int: i }, p_builtin_int_type };
+    return (val) { true, { i_int: i }, val::INT };
 }

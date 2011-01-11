@@ -29,10 +29,10 @@ void DottedName::toStream(std::ostream& strm)
         strm << this->names[i] << (i + 1 == this->names.size() ? "": ".");
     }
 }
-val DottedName::evaluate(ParathonContext&c)
+val DottedName::evaluate()
 {
     return None;
 }
-void DottedName::evaluate_print(ParathonContext&c, std::ostream& strm)
+void DottedName::evaluate_print(std::ostream& strm)
 {
 }

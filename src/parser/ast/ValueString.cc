@@ -14,7 +14,7 @@ void ValueString::toStream(std::ostream& strm)
     //FIXME
     strm << "\"" << this->s << "\"";
 }
-val ValueString::evaluate(ParathonContext& c)
+val ValueString::evaluate()
 {
-    return (val) { true, { i_ptr: s }, p_builtin_const_char_pointer_type };
+    return (val) { false, { i_ptr: s }, val::CHAR_PTR };
 }

@@ -16,7 +16,7 @@ void ReturnStatement::toStream(std::ostream& strm)
 {
     strm << "return " << this->tests;
 }
-val ReturnStatement::evaluate(ParathonContext& c)
+val ReturnStatement::evaluate()
 {
-    throw new ParathonReturn(tests->evaluate(c));
+    throw new ParathonReturn(tests->evaluate());
 }

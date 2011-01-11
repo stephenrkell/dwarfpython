@@ -14,11 +14,11 @@ UnaryOperator *UnaryOperator::parse(OpBnot *o)
 {
     return o;
 }
-val UnaryOperator::evaluate(ParathonContext& c)
+val UnaryOperator::evaluate()
 {
     return None;
 }
-void UnaryOperator::evaluate_print(ParathonContext& c, std::ostream& strm)
+void UnaryOperator::evaluate_print( std::ostream& strm)
 {
     return;
 }

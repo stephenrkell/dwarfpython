@@ -35,5 +35,11 @@ ifneq ($(MAKECMDGOAL),clean)
 -include $(DEPS)
 endif
 
-dwarfpy: parser-recursive buffer.o ops.o
-	$(CXX) $(CXXFLAGS) -o "$@" main.cc buffer.o ops.o parser/*.o parser/ast/*.o $(LDFLAGS) $(LDLIBS) 
+dwarfpy: parser-recursive buffer.o ops.o function_definition.o util.o arithmetic.o assign.o control.o resolve.o
+	$(CXX) $(CXXFLAGS) -o "$@" main.cc buffer.o function_definition.o arithmetic.o assign.o control.o resolve.o util.o ops.o parser/*.o parser/ast/*.o $(LDFLAGS) $(LDLIBS) 
+
+debug-fac: dwarfpy
+	gdb dwarfpy --eval-command "run <<<\$$'def fac(n):\n\tif n == 0: return 1\n\tprint \"calculating fac of \"\n\tprint n\n\treturn n * fac(n-1)\n\nprint fac(2)\n'"
+
+debug-cmp: dwarfpy
+	gdb dwarfpy --eval-command "break 'ComparisonOperator::compare(val, val)'" --eval-command "run <<<\$$'print (0 == 0)\nprint(1 == 1)\nprint(1 == 0)\nprint(1 > 0)\nprint(1 >= 0)\nprint(1 < 0)\nprint(1 <= 0)\nif 1:\n\tprint \"1 is true\"\nelse:\n\tprint \"1 is false\"\n\n'"

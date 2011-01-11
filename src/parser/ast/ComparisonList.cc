@@ -28,17 +28,26 @@ void ComparisonList::toStream(std::ostream& strm)
     }
     strm << this->exprs[i];
 }
-val ComparisonList::evaluate(ParathonContext& c)
+val ComparisonList::evaluate()
 {
-    val previous = exprs[0]->evaluate(c);
-    val next;
-    for (unsigned i=0; i< comps.size(); i++)
-    {
-        next = exprs[i+1]->evaluate(c);
-        //if (!comps[i]->compare(previous, next))
-        //        return new ParathonValue((parathon_int)0);
-        
-        previous = next;
-    }
-    return None;//new ParathonValue((parathon_int)1);
+	// evaluate the first element in the list of chained comparisons
+	val previous = exprs[0]->evaluate();
+	val next;
+	for (unsigned i=0; i< comps.size(); i++)
+	{
+		// evaluate 
+		// FIXME: is i+1 safe here? use "at" to allow range checking
+		next = exprs.at(i+1)->evaluate();
+
+		// continue the short-circuit conjunction of each comparison
+		if (!comps[i]->compare(previous, next))
+		{
+			// return a value that's False
+			return (val) { true, { i_int: 0 }, val::INT };
+		}
+
+		previous = next;
+	}
+	// we got to the end, so return a value that's True
+	return (val) { true, { i_int: 1 }, val::INT };
 }

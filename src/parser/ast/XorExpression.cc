@@ -1,6 +1,7 @@
 #include "ast.h"
 /**
  * inherits: Expression
+ * virtual: val evaluate();
  */
 XorExpression *XorExpression::parse(AndExpression *ae)
 {
@@ -13,8 +14,4 @@ XorExpression *XorExpression::parse(AndExpression *ae, OpBxor *op, XorExpression
     e->op = op;
     e->rhs = xe;
     return e;
-}
-val XorExpression::evaluate(ParathonContext& c)
-{
-    return parathon_call("__xor__", this->lhs->evaluate(c), this->rhs->evaluate(c));
 }

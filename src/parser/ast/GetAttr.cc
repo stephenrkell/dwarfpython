@@ -16,14 +16,14 @@ void GetAttr::toStream(std::ostream& strm)
 {
     strm << this->base_phrase << "." << this->name;
 }
-val GetAttr::evaluate(ParathonContext& c)
+val GetAttr::evaluate()
 {
-    //return BUILTIN__getattr__(&c)(base_phrase->evaluate(c), this->name->getName());
+    //return BUILTIN__getattr__(&c)(base_phrase->evaluate(), this->name->getName());
     std::cerr << "GetAttr not implemented!" << std::endl;
      return None;
 }
-ParathonAssigner* GetAttr::getAssigner(ParathonContext& c)
+ParathonAssigner* GetAttr::getAssigner()
 {
-    //return new ParathonContextAssigner(base_phrase->evaluate(c), std::string(this->name->getName()));
+    //return new ParathonContextAssigner(base_phrase->evaluate(), std::string(this->name->getName()));
 	return 0;
 }

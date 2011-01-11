@@ -29,11 +29,11 @@ void TestPhraseOptional::toStream(std::ostream& strm)
     throw "TestPhraseOptional should never be printed.";
     strm << this->tp;
 }
-val TestPhraseOptional::evaluate(ParathonContext& c)
+val TestPhraseOptional::evaluate()
 {
     return None;
 }
-void TestPhraseOptional::evaluate_print(ParathonContext& c,std::ostream& strm)
+void TestPhraseOptional::evaluate_print(std::ostream& strm)
 {
     return;
 }

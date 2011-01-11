@@ -1,11 +1,12 @@
-OBJS := parathon.l.o parathon.yy.o ast.o $(patsubst %.cc,%.o,$(wildcard ast/*.cc))
+OBJS := parathon.l.o parathon.yy.o ast.o $(patsubst ast/%.cc,ast/%.o,$(wildcard ast/*.cc))
 #$(warning OBJS is $(OBJS))
 CXXFLAGS += -std=c++0x -g3
 CXXFLAGS += -I. -I..
 
 LDLIBS += -lfl -lreadline -lffi -ldwarf -lelf -lgc
 
-CC_SRC := parathon.l.cc parathon.yy.cc
+CC_SRC := parathon.l.cc parathon.yy.cc 
+AST_CC_SRC := $(wildcard ast/*.cc)
 CPP_SRC :=
 C_SRC :=
 
@@ -13,20 +14,21 @@ default: $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -f *.o .*.d ast/*.o ast/.*.d ast.h parathon.l.cc parathon.yy.cc parathon.yy
+	rm -f *.o .*.d ast/*.o ast/.*.d ast.h parathon.l.{cc,h} parathon.yy.cc parathon.yy
 
 CC_DEPS := $(patsubst %.cc,.%.d,$(CC_SRC))
+AST_CC_DEPS := $(patsubst ast/%.cc,.%.d,$(AST_CC_SRC))
 CPP_DEPS :=
 C_DEPS += $(patsubst %.c,.%.d,$(C_SRC))
 
-DEPS := $(CC_DEPS) $(CPP_DEPS) $(C_DEPS)
-
-default: $(OBJS)
+DEPS := $(CC_DEPS) $(AST_CC_DEPS) $(CPP_DEPS) $(C_DEPS)
 
 $(CPP_DEPS): .%.d : %.cpp
 	g++ -MM $(CXXFLAGS) "$<"  > "$@"
 $(CC_DEPS): .%.d : %.cc
 	g++ -MM $(CXXFLAGS) "$<"  > "$@"
+$(AST_CC_DEPS): .%.d : ast/%.cc
+	g++ -MM -MT ast/$*.o $(CXXFLAGS) "$<" -MF"$@"
 $(C_DEPS): .%.d : %.c
 	gcc -MM $(CFLAGS) "$<"  > "$@"
 
@@ -34,10 +36,10 @@ ifneq ($(MAKECMDGOALS),clean)
 -include $(DEPS)
 endif
 
-ast.h parathon.yy: $(wildcard ast/*.cc)
+ast.h parathon.yy: $(wildcard ast/*.cc) autogen.py
 	python ./autogen.py ast
 
-parathon.l.cc: parathon.yy.cc
+parathon.l.cc: parathon.yy.cc parathon.l
 	flex -t --header-file=parathon.l.h parathon.l > parathon.l.cc
 
 parathon.yy.cc parathon.yy.hh: parathon.yy

@@ -4,6 +4,7 @@
  * inherits: BasePhrase
  * private: BasePhrase *base_phrase;
  * private: ParameterList *parameter_list;
+ * virtual: val evaluate();
  */
 FunctionCall *FunctionCall::parse(BasePhrase *bp, T_OPEN_CURVED _t, ParameterList *pl, T_CLOSE_CURVED _tt)
 {
@@ -18,10 +19,3 @@ void FunctionCall::toStream(std::ostream& strm)
     strm << this->base_phrase << "(" << this->parameter_list << ")";
 }
 
-val FunctionCall::evaluate(ParathonContext& c)
-{
-	std::cerr << "Function call not implemented!" << std::endl;
-    return None;
-    //return this->base_phrase->evaluate(c)->call(this->parameter_list->asArgs(c));
-
-}

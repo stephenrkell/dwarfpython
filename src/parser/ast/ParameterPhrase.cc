@@ -2,6 +2,7 @@
 /**
  * private: TestPhrase *value;
  * private: NamePhrase *name;
+ * virtual: bool assign(val v);
  */
 ParameterPhrase *ParameterPhrase::parse(TestPhrase *tp)
 {
@@ -23,26 +24,19 @@ void ParameterPhrase::toStream(std::ostream& strm)
         strm << this->name << "=";
     strm << this->value;
 }
-val ParameterPhrase::evaluate(ParathonContext& c)
+val ParameterPhrase::evaluate()
 {
-    return this->value->evaluate(c);
+    return this->value->evaluate();
 }
-void ParameterPhrase::evaluate_print(ParathonContext& c,std::ostream& strm)
+void ParameterPhrase::evaluate_print(std::ostream& strm)
 {
-    this->value->evaluate_print(c, strm);
+    this->value->evaluate_print(strm);
 }
-bool ParameterPhrase::assign(ParathonContext& c, val v)
+NamePhrase *ParameterPhrase::getName()
 {
-    ParathonAssigner *a = (this->name == NULL ? this->value : this->name)->getAssigner(c);
-
-    if (a == NULL)
-        return false;
-
-    if (is_true(v))
-        a->assign(v);
-    else { std::cerr << "Parameter assignment case not supported!" << std::endl; return false; }
-        //a->assign(this->value->evaluate(*(ParathonContext*)c.parent));
-
-    return true;
-
+	return name;
+}
+TestPhrase *ParameterPhrase::getValue()
+{
+	return value;
 }

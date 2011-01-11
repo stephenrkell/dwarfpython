@@ -28,11 +28,11 @@ void SliceList::toStream(std::ostream &strm)
     }
 
 }
-val SliceList::evaluate(ParathonContext& c)
+val SliceList::evaluate()
 {
     return None;
 }
-void SliceList::evaluate_print(ParathonContext& c,std::ostream& strm)
+void SliceList::evaluate_print(std::ostream& strm)
 {
     return;
 }

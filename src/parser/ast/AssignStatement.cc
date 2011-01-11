@@ -4,6 +4,7 @@
  * private: TestStatement *lhs;
  * private: TestStatement *rhs;
  * private: Operator *op;
+ * virtual: val evaluate();
  */
 AssignStatement *AssignStatement::parse(TestStatement *lhs, T_ASSIGN _t, TestStatement *rhs)
 {
@@ -22,17 +23,4 @@ void AssignStatement::toStream(std::ostream& strm)
         strm << this->op;
     strm << "= " << this->rhs;
 }
-val AssignStatement::evaluate(ParathonContext& c)
-{
-    val x = rhs->evaluate(c);
-    ParathonAssigner *a = this->lhs->getAssigner(c);
-    if (a)
-    {
-        a->assign(x);
-    }
-    else
-    {
-        std::cerr << "Tried to assign to something strange" << std::endl;
-    }
-    return None;
-}
+

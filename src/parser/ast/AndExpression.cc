@@ -1,6 +1,7 @@
 #include "ast.h"
 /**
  * inherits: XorExpression
+ * virtual: val evaluate()
  */
 AndExpression *AndExpression::parse(ShiftExpression *se)
 {
@@ -13,16 +14,4 @@ AndExpression *AndExpression::parse(ShiftExpression *lhs, OpBand *op, AndExpress
     e->op = op;
     e->rhs = rhs;
     return e;
-}
-val AndExpression::evaluate(ParathonContext& c)
-{
-    val x = this->lhs->evaluate(c);
-    if (is_true(x))
-    {
-        //return lookup_and_call(x, "__and__", this->rhs->evaluate(c));
-        std::cerr << "FIXME: AND expression not implemented."  << std::endl;
-        //return lookup_and_call(x, "__and__", this->rhs->evaluate(c));
-    }
-    std::cerr  << "PHAIL!";
-    return None;
 }

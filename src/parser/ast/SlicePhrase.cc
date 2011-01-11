@@ -60,11 +60,11 @@ void SlicePhrase::toStream(std::ostream& strm)
         }
     }
 }
-val SlicePhrase::evaluate(ParathonContext& c)
+val SlicePhrase::evaluate()
 {
     return None;
 }
-void SlicePhrase::evaluate_print(ParathonContext& c,std::ostream& strm)
+void SlicePhrase::evaluate_print(std::ostream& strm)
 {
     return;
 }

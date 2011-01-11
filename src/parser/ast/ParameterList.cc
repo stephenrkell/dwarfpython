@@ -4,6 +4,8 @@
  * protected: TestPhrase *kwargs;
  * protected: TestPhrase *args;
  * protected: std::vector<ParameterPhrase *> params;
+ * virtual: std::vector<val>* asArgs();
+ * virtual: bool assign(std::vector<val> *values);
  */
 ParameterList *ParameterList::parse(ParameterListArgs *pla)
 {
@@ -44,31 +46,19 @@ void ParameterList::toStream(std::ostream& strm)
     if (this->kwargs)
         strm << sep << "**" << this->kwargs;
 }
-val ParameterList::evaluate(ParathonContext& c)
+val ParameterList::evaluate()
 {
     return None;
 }
-void ParameterList::evaluate_print(ParathonContext& c,std::ostream& strm)
+void ParameterList::evaluate_print(std::ostream& strm)
 {
     return;
 }
-std::vector<val>* ParameterList::asArgs(ParathonContext& c)
+int ParameterList::size()
 {
-    std::vector<val> *a = new std::vector<val>;
-    for (unsigned i=0; i < this->params.size(); i++)
-    {
-        a->push_back(this->params[i]->evaluate(c));
-    }
-    return a;
+	return this->params.size();
 }
-bool ParameterList::assign(ParathonContext &c, std::vector<val> *values)
+ParameterPhrase* ParameterList::get(int i)
 {
-    if (this->params.size() != values->size())
-        return false;
-    for (unsigned i=0; i < this->params.size(); i++)
-    {
-        if (!this->params[i]->assign(c, (*values)[i]))
-            return false;
-    }
-    return true;
+	return this->params[i];
 }

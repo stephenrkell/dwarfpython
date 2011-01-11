@@ -6,6 +6,7 @@
  * inherits: SmallStatement
  * private: TestPhrase *file;
  * private: TestList *testlist;
+ * virtual: val evaluate();
  */
 PrintStatement *PrintStatement::parse(T_PRINT _t, TestList* tl)
 {
@@ -41,19 +42,4 @@ void PrintStatement::toStream(std::ostream& s)
 
     if (this->testlist)
         s << " " << this->testlist;
-}
-val PrintStatement::evaluate(ParathonContext& c)
-{
-    std::string separator = "";
-    for (unsigned i = 0; i < this->testlist->size(); i++)
-    {
-        std::cout << separator;
-        //this->testlist->item(i)->evaluate(c)->toStream(std::cout);
-        print_value_to_stream(this->testlist->item(i)->evaluate(c), std::cout);
-        separator = " ";
-    }
-    if (!this->testlist->hasTrailingComma())
-        std::cout << std::endl;
-
-    return None;
 }

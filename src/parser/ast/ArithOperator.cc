@@ -10,11 +10,11 @@ ArithOperator *ArithOperator::parse(OpMinus *op)
 {
     return op;
 }
-val ArithOperator::evaluate(ParathonContext& c)
+val ArithOperator::evaluate()
 {
     return None;
 }
-void ArithOperator::evaluate_print(ParathonContext& c,std::ostream& strm)
+void ArithOperator::evaluate_print(std::ostream& strm)
 {
     return;
 }

@@ -2,6 +2,7 @@
 /*#include "builtins.hh"*/
 /**
  * virtual: bool compare(int)
+ * virtual: bool compare(val lhs, val rhs)
  */
 ComparisonOperator *ComparisonOperator::parse(CompLt *co)
 {
@@ -43,24 +44,18 @@ ComparisonOperator *ComparisonOperator::parse(CompNotIs *co)
 {
     return co;
 }
-val ComparisonOperator::evaluate(ParathonContext& c)
+val ComparisonOperator::evaluate()
 {
     return None;
 }
-void ComparisonOperator::evaluate_print(ParathonContext& c, std::ostream& strm)
+void ComparisonOperator::evaluate_print(std::ostream& strm)
 {
-    strm << this->evaluate(c) << std::endl;
-}
-bool ComparisonOperator::compare(val lhs, val rhs)
-{
-    //ParathonValue* cmp = BUILTIN__getattr__(&ParathonValue::builtins)(lhs, "__cmp__");
-    //if (cmp)
-    //    return this->compare(*(parathon_int*)cmp->call(rhs)->value);
-    std::cerr << "FIXME: compare not implemented" << std::endl;
-    return false;
+    strm << this->evaluate() << std::endl;
 }
 bool ComparisonOperator::compare(int x)
 {
-    std::cerr << "Tried to compare a virtual operator..." << std::endl;
-    return false;
+	std::cerr 	<< "Warning: ComparisonOperator::compare() called -- "
+				<< "BUG meaning a comparison operator subclass is missing its compare()." 
+				<< std::endl;
+	return false;
 }

@@ -2,6 +2,7 @@
 /**
  * inherits: ComparisonPhrase
  * protected: Operator *op;
+ * virtual: val evaluate();
  */
 Expression *Expression::parse(XorExpression *xe)
 {
@@ -18,9 +19,5 @@ Expression *Expression::parse(XorExpression *lhs, OpBor *op, Expression *rhs)
 void Expression::toStream(std::ostream& strm)
 {
     strm << "(" << this->lhs << " " << this->op << " " << this->rhs << ")";
-}
-val Expression::evaluate(ParathonContext& c)
-{
-    return parathon_call("__or__", this->lhs->evaluate(c), this->rhs->evaluate(c));
 }
 

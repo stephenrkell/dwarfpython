@@ -24,7 +24,7 @@ ImportStatement *ImportStatement::parse(T_FROM _t, DottedName *name, T_IMPORT _t
 {
     return ImportStatement::parse(_t, name, _tt, ian);
 }
-void ImportStatement::evaluate_print(ParathonContext& c, std::ostream& strm)
+void ImportStatement::evaluate_print( std::ostream& strm)
 {
-    this->evaluate(c);
+    this->evaluate();
 }

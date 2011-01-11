@@ -25,11 +25,11 @@ void ParameterListArgs::toStream(std::ostream& strm)
 {
     strm << "FAIL!";
 }
-val ParameterListArgs::evaluate(ParathonContext& c)
+val ParameterListArgs::evaluate()
 {
     return None;
 }
-void ParameterListArgs::evaluate_print(ParathonContext& c,std::ostream& strm)
+void ParameterListArgs::evaluate_print(std::ostream& strm)
 {
     return;
 }

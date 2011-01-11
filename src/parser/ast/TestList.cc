@@ -39,7 +39,7 @@ TestPhrase *TestList::item(unsigned i)
 {
     return this->tests[i];
 }
-val TestList::evaluate(ParathonContext& c)
+val TestList::evaluate()
 {
-    return this->tests[this->tests.size() - 1]->evaluate(c);
+    return this->tests[this->tests.size() - 1]->evaluate();
 }

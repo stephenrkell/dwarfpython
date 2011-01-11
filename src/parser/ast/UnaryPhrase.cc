@@ -1,6 +1,7 @@
 #include "ast.h"
 /**
  * inherits: FactExpression
+ * virtual: val evaluate();
  */
 UnaryPhrase *UnaryPhrase::parse(BasePhrase *bp)
 {
@@ -16,8 +17,4 @@ UnaryPhrase *UnaryPhrase::parse(UnaryOperator *op, UnaryPhrase *up)
 void UnaryPhrase::toStream(std::ostream& strm)
 {
     strm << this->op << this->rhs;
-}
-val UnaryPhrase::evaluate(ParathonContext& c)
-{
-    return parathon_call(this->op->opname(), this->rhs->evaluate(c));
 }

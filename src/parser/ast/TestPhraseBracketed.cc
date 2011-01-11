@@ -17,7 +17,7 @@ void TestPhraseBracketed::toStream(std::ostream& strm)
 {
     strm << tp ;
 }
-val TestPhraseBracketed::evaluate(ParathonContext& c)
+val TestPhraseBracketed::evaluate()
 {
-    return this->tp->evaluate(c);
+    return this->tp->evaluate();
 }

@@ -1,6 +1,7 @@
 #include "ast.h"
 /**
  * inherits: ShiftExpression
+ * virtual: val evaluate()
  */
 ArithExpression *ArithExpression::parse(MultExpression *me)
 {
@@ -13,8 +14,4 @@ ArithExpression *ArithExpression::parse(ArithExpression *lhs, ArithOperator *op,
     e->rhs = rhs;
     e->op = op;
     return e;
-}
-val ArithExpression::evaluate(ParathonContext& c)
-{
-    return parathon_call(this->op->opname(), this->lhs->evaluate(c), this->rhs->evaluate(c));
 }

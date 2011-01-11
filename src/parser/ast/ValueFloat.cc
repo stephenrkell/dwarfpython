@@ -14,7 +14,7 @@ void ValueFloat::toStream(std::ostream& strm)
 {
     strm << this->f;
 }
-val ValueFloat::evaluate(ParathonContext& c)
+val ValueFloat::evaluate()
 {
-    return (val) { true, { i_double: f }, p_builtin_double_type };
+    return (val) { true, { i_double: f }, val::DOUBLE };
 }

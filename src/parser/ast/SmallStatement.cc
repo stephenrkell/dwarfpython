@@ -45,11 +45,11 @@ SmallStatement *SmallStatement::parse(ReturnStatement *s)
 {
     return s;
 }
-val SmallStatement::evaluate(ParathonContext& c)
+val SmallStatement::evaluate()
 {
     return None;
 }
-void SmallStatement::evaluate_print(ParathonContext& c, std::ostream& strm)
+void SmallStatement::evaluate_print( std::ostream& strm)
 {
-    strm << this->evaluate(c) << std::endl;
+    strm << this->evaluate() << std::endl;
 }
