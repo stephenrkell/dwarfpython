@@ -20,7 +20,7 @@ val evaluate(Statement *arg)
 
 const unsigned MARKER_ADDRESS = 0x12345678U;
 
-void *ideal_entry_point(...) __attribute__((optimize(3)));
+void *ideal_entry_point(...) __attribute__((optimize(0)));
 void *ideal_entry_point(...)
 {
 	// call through an immediately-addressed object's vtable.
@@ -62,8 +62,8 @@ val FunctionDefinition::evaluate()
     assert(subprogram_die->enclosing_compile_unit());
     subprogram_die->enclosing_compile_unit()->get_ranges()->push_back(
     	(lib::Dwarf_Ranges) { 
-        	(unsigned) ret, 
-            (unsigned) ret + sysconf(_SC_PAGE_SIZE), 
+        	(unsigned long) ret, 
+            (unsigned long) ret + sysconf(_SC_PAGE_SIZE), 
             lib::DW_RANGES_ENTRY });
     
     // give it a frame_base? YES, just make it ebp (no lexical blocks to worry about)
@@ -157,7 +157,7 @@ val FunctionDefinition::evaluate()
 		offset += sizeof (void*);
 		
 		// add the type
-		fp->set_type(dynamic_pointer_cast<spec::type_die>(p_builtin_pointer_type));
+		fp->set_type(dynamic_pointer_cast<spec::type_die>(p_builtin_reference_type));
 	}    
     
     // children: local variables?

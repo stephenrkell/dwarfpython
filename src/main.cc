@@ -32,6 +32,7 @@ shared_ptr<encap::base_type_die> p_builtin_double_type; // overwritten in init
 shared_ptr<encap::base_type_die> p_builtin_char_type;
 shared_ptr<encap::const_type_die> p_builtin_const_char_type;
 shared_ptr<encap::pointer_type_die> p_builtin_pointer_type;
+shared_ptr<encap::reference_type_die> p_builtin_reference_type;
 shared_ptr<encap::pointer_type_die> p_builtin_const_char_pointer_type;
 shared_ptr<encap::array_type_die> p_builtin_const_char_array_type;
 void init() __attribute__((constructor));
@@ -51,6 +52,11 @@ void init()
      dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")), 
         std::string("void_pointer_type"));
 	p_pointer_type_die->set_byte_size(sizeof (void*));
+
+    auto p_reference_type_die = new encap::reference_type_die(
+     dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")), 
+        std::string("void_reference_type"));
+	p_reference_type_die->set_byte_size(sizeof (void*));
 
     auto p_int_die = new encap::base_type_die(
      dynamic_cast<encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")), 
@@ -105,6 +111,8 @@ void init()
      p_compile_unit_die->named_child("const_char_array_type")); assert(p_builtin_const_char_array_type);
 	p_builtin_pointer_type = dynamic_pointer_cast<encap::pointer_type_die>(
 	 p_compile_unit_die->named_child("void_pointer_type")); assert(p_builtin_pointer_type);
+	p_builtin_reference_type = dynamic_pointer_cast<encap::reference_type_die>(
+	 p_compile_unit_die->named_child("void_reference_type")); assert(p_builtin_reference_type);
     
     // debugging
     std::cerr << "Started DwarfPython with builtins as follows." << std::endl << builtins;

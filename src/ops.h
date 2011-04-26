@@ -21,6 +21,12 @@ bool is_true(val value);
  * i.e. it relieves us from handling non-immediate primitives. */
 val normalize_val(val value);
 
+/* Get a pointer pointing to a memory location containing the 
+ * raw bytes of the object denoted by val. For immediate vals,
+ * this writes val to a temporary variable (if passed), else
+ * just passes the address in the caller's val. */
+void *raw_address_of_val(const val& value, val *temporary);
+
 /* Resolve a name to an object. Use the program context directly! */
 val lookup_name(const std::string& s);
 

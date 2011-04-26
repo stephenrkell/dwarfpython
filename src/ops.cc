@@ -68,6 +68,29 @@ val normalize_val(val value)
 	}
 }
 
+void *raw_address_of_val(const val& value, val *temporary)
+{
+	/* "reference" behaviour -- pass the address of the object denoted by val */
+	if (value.is_immediate)
+	{
+		if (temporary)
+		{
+			/* Caller has hinted that their val does not have appropriate
+			 * lifetime. */
+			*temporary = value;
+			return (void*) &temporary->i_double;
+		}
+		else
+		{
+			return (void*) &value.i_double;
+		}
+	}
+	else
+	{
+		return (void*) value.i_ptr;
+	}
+}
+
 bool is_true(val value) 
 { 
 	/* From Python 2.5 docs:
@@ -239,14 +262,29 @@ static int lexical_name_lookup_handler(
 		// ... add it to the list of starting points
 		p_starting_points->push_back(
 			dynamic_pointer_cast<spec::with_named_children_die>(discovered));
-			
-		// output the frame base
-		output->frame_base = frame_caller_sp;
+
+		// calculate and output the frame base
+		libunwind_regs my_regs(&frame_cursor); 
+		output->frame_base = dwarf::lib::evaluator(
+			/* loclist = */ *dynamic_pointer_cast<spec::subprogram_die>(discovered)->get_frame_base(),
+			/* vaddr = */ frame_ip - image->get_dieset_base(discovered->get_ds()), /* This is our file-relative IP within the function whose frame includes the local allocation */
+			/* spec = */ spec::DEFAULT_DWARF_SPEC,
+			/* regs = */ &my_regs,
+			/* optional<Dwarf_Signed> frame_base = */ boost::optional<lib::Dwarf_Signed>(),
+			/* const std::stack<Dwarf_Unsigned>& initial_stack = */ std::stack<lib::Dwarf_Unsigned>()
+		).tos();
+		
+		// output message and frame IP
+		std::cerr << "Added starting point DIE " << *discovered
+			<< "paired with frame having caller SP " 
+			<< std::hex << frame_caller_sp << std::dec
+			<< " and frame base "
+			<< std::hex << output->frame_base << std::dec 
+			<< " and saved IP " << std::hex << frame_ip << std::dec
+			<< "; terminating stack walk..." << std::endl;
 		output->ip = frame_ip;
 		
 		// ... and (FOR NOW, only) terminate
-		std::cerr << "Added starting point DIE " << *discovered
-		 << " and terminating stack walk..." << std::endl;
 		return 1;
 	}
 	// else if we should terminate
@@ -376,13 +414,13 @@ val lookup_name(const std::string& name)
 	{
 		std::cerr << "Found a die... breakpoint here please." << std::endl;
 
+		val r; // this will be returned
 		if (dynamic_pointer_cast<spec::with_runtime_location_die>(result))
 		{
 			process_image::addr_t p_obj = image.get_object_from_die(
 				/* FIXME: get vaddr from ParathonContext */
 				boost::dynamic_pointer_cast<spec::with_runtime_location_die>(result), 0);
-			val r = { false, { i_ptr: reinterpret_cast<void*>(p_obj) }, val::TBD };
-			return r;
+			r = (val) { false, { i_ptr: reinterpret_cast<void*>(p_obj) }, val::TBD };
 		}
 		else if (dynamic_pointer_cast<spec::with_stack_location_die>(result)
 		&& dynamic_pointer_cast<spec::with_stack_location_die>(result)->get_location())
@@ -399,8 +437,9 @@ val lookup_name(const std::string& name)
 				/* const std::stack<Dwarf_Unsigned>& initial_stack = */ std::stack<lib::Dwarf_Unsigned>()
 			).tos();
 			std::cerr << "We have calculated that variable " << name 
+				<< " in frame based at " << std::hex << output.frame_base << std::dec
 				<< " lies at address " << std::hex << addr << std::dec << std::endl;
-			return (val) { false, { i_ptr: reinterpret_cast<void*>(addr) }, val::TBD };
+			r = (val) { false, { i_ptr: reinterpret_cast<void*>(addr) }, val::TBD };
 		}
 		else if (dynamic_pointer_cast<spec::member_die>(result))
 		{
@@ -412,6 +451,25 @@ val lookup_name(const std::string& name)
 			assert(false);
 		}
 	
+		/* Now, if the result is of reference type, dereference it before returning. */
+		if (result->get_tag() == DW_TAG_subprogram) return r;
+		else
+		{
+			auto result_wsl = dynamic_pointer_cast<with_stack_location_die>(result);
+			assert(result_wsl);
+			if (result_wsl->get_type() &&
+				(*result_wsl->get_type())->get_tag() == DW_TAG_reference_type)
+			{
+				void *derefed = *reinterpret_cast<void**>(r.i_ptr);
+				std::cerr << "Since variable " << name 
+					<< " is a reference, dereferencing " << std::hex << r.i_ptr << std::dec 
+					<< " to yield resolved variable at location " << std::hex << derefed << std::dec
+					<< " (word value currently : 0x" << std::hex << *(unsigned*)derefed << ")" << std::dec
+					<< std::endl;
+				return (val) { false, { i_ptr: derefed }, val::TBD };
+			}
+			else return r;
+		}
 	}
 }
 
@@ -622,8 +680,14 @@ val call_function(val function, std::vector<val> *params)
 			i_child != subp->formal_parameter_children_end();
 			i_child++) argcount++;
 	ffi_type **ffi_type_buf = (ffi_type **) alloca(argcount * sizeof (ffi_type *)
-											+ argcount * sizeof (void *));
+											+ argcount * sizeof (void *)
+											// FIXME: ^^^ doesn't work for non-wordsize args
+											+ argcount * sizeof (val)
+											// ^^^ to hold reference temporaries
+											);
 	void **ffi_arg_buf = (void **) (ffi_type_buf + argcount);
+	val *reference_temporaries_buf = (val*) (ffi_arg_buf + argcount);
+
 	int i_arg_type = 0;
 	for (auto i_fp = subp->formal_parameter_children_begin(); 
 			i_fp != subp->formal_parameter_children_end();
@@ -645,9 +709,51 @@ val call_function(val function, std::vector<val> *params)
 			i_fp++, i_arg_val++, i_param++)
 	{
 		assert(i_param != params->end());
-		ffi_arg_buf[i_arg_val] = i_param->is_immediate ? (void *) &i_param->i_int : (void *) &i_param->i_ptr;
-		// note that this work for double too because ^ this is a union
-		// FIXME: this is broken for doubles or non-32bit ints!
+		/* FIXME: we have to coerce parameters here because the called function 
+		 * might bring type constraints.
+		 * BUT is this the right place to do this? e.g. if we are evaluating
+		 * fac(2) and fac takes a reference, who is responsible for indirecting
+		 * the "2" to a pointer-to-2? It could be us, or it could be the argument
+		 * evaluation code, or it could be FunctionCall::evaluate() code. It's not
+		 * the argument evaluation code because it has no knowledge of the function.
+		 * It doesn't really matter whether it goes in FunctionCall::evaluate() or
+		 * here. Let's put it here. */
+		 
+		/* PROBLEM: val is ambiguous when our actual value (e.g. the argument we're passing)
+		 * is a pointer. Do we set immediate? I'd say no. 
+		 * NOTE: this means ValueString is broken! It creates a pointer-to-char
+		 * as (val) { false, { i_ptr: s }, val::CHAR_PTR }; 
+		 * i.e. as a ^^ *NON*-immediate pointer. */
+		
+		/* PROBLEM: What if it's ambiguous whether we need to pass the val or the
+		 * address? 
+		 * SOLUTION: Decree that if we're passing a reference , we *will* take the
+		 * address of the object denoted by the val
+		 * (i.e. i_ptr if the val is non-immediate, or
+		 *      &i_int if the val is immediate) 
+		 * and pass that. Passing that means pointing ffi_arg_buf[i_arg_val] at this address.
+		 * creating a buffer */
+		
+		/* Here we're really coding an "address of" function. */
+		// address_of(val *reference_temporary);
+		
+		if ((*i_fp)->get_type() && (*(*i_fp)->get_type())->get_concrete_type()
+			&& (*(*i_fp)->get_type())->get_concrete_type()->get_tag() == DW_TAG_reference_type)
+		{
+			/* "reference" behaviour -- pass the address of the object denoted by val,
+			 * meaning we need to be able to take the address of that address. */
+			reference_temporaries_buf[i_arg_val] 
+			= (val) { true, { i_ptr: raw_address_of_val(*i_param, 0) }, val::OTHER_PTR };
+			ffi_arg_buf[i_arg_val] = raw_address_of_val(reference_temporaries_buf[i_arg_val], 0);
+		}
+		else
+		{
+			/* "normal" behaviour */
+			ffi_arg_buf[i_arg_val] = i_param->is_immediate ? (void *) &i_param->i_int : i_param->i_ptr;
+			// note that this work for double too because ^ this is a union
+			// FIXME: this is broken for doubles or non-32bit ints!
+		}
+		
 	}
 	
 	// FIXME: assume the return value from foo() is smaller than sizeof(long), it
@@ -673,6 +779,21 @@ val call_function(val function, std::vector<val> *params)
 	}
 
 	// Invoke the function.
+	std::cerr << "FFI-calling function at " << function.i_ptr
+		<< " with arguments (";
+	for (int i = 0; i < argcount; i++)
+	{
+		if (i != 0) std::cerr << ", ";
+		std::cerr << (params->at(i).is_immediate ? 
+			params->at(i).i_int 
+		: 	*(reinterpret_cast<int*>(params->at(i).i_ptr)))
+		<< "[in ffi_arg buf at " << &ffi_arg_buf[i] 
+		<< ", pointing to " << ffi_arg_buf[i] 
+		<< ", word value " << *(int*)ffi_arg_buf[i] 
+		<< "]";
+	}
+	std::cerr << ")" << std::endl;
+	
 	ffi_call(&cif, FFI_FN(function.i_ptr), &result, ffi_arg_buf);
 
 	// The ffi_arg 'result' now contains the unsigned char returned from foo(),

@@ -25,6 +25,7 @@ using spec::const_type_die;
 using spec::pointer_type_die;
 using spec::subprogram_die;
 using spec::basic_die;
+using spec::with_stack_location_die;
 
 extern shared_ptr<encap::base_type_die> p_builtin_int_type; // overwritten in init
 extern shared_ptr<encap::base_type_die> p_builtin_double_type; // overwritten in init
@@ -32,6 +33,7 @@ extern shared_ptr<encap::base_type_die> p_builtin_char_type;
 extern shared_ptr<encap::const_type_die> p_builtin_const_char_type;
 //extern shared_ptr<encap::pointer_type_die> p_builtin_const_char_pointer_type;
 extern shared_ptr<encap::pointer_type_die> p_builtin_pointer_type;
+extern shared_ptr<encap::reference_type_die> p_builtin_reference_type;
 extern shared_ptr<encap::array_type_die> p_builtin_const_char_array_type;
 
 /* defined in main.cc */

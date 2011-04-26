@@ -46,6 +46,7 @@ void yyerror(void* context, char const *s)
 %token TOK_WITH TOK_DEL TOK_EXEC 
 
 %union {
+    ArithOperator *arith_operator;
     ComparisonOperator *comparison_operator;
     DottedName *dotted_name;
     MultOperator *mult_operator;
@@ -53,13 +54,12 @@ void yyerror(void* context, char const *s)
     ParameterListArgs *parameter_list_args;
     ParameterPhrase *parameter_phrase;
     ShiftOperator *shift_operator;
-    SingleInput *single_input;
     SliceList *slice_list;
+    SingleInput *single_input;
     SlicePhrase *slice_phrase;
     SmallStatement *small_statement;
     TestPhraseOptional *test_phrase_optional;
     UnaryOperator *unary_operator;
-    ArithOperator *arith_operator;
     AssignStatement *assign_statement;
     BreakStatement *break_statement;
     CompEq *comp_eq;
@@ -83,24 +83,24 @@ void yyerror(void* context, char const *s)
     OpBor *op_bor;
     OpBxor *op_bxor;
     OpDivide *op_divide;
-    OpLeftShift *op_left_shift;
     OpMinus *op_minus;
-    OpMod *op_mod;
+    OpLeftShift *op_left_shift;
     OpMult *op_mult;
+    OpMod *op_mod;
     OpNegative *op_negative;
     OpPlus *op_plus;
     OpPositive *op_positive;
     OpPower *op_power;
-    OpRightShift *op_right_shift;
     OpTrunc *op_trunc;
+    OpRightShift *op_right_shift;
     ParameterListKwargs *parameter_list_kwargs;
     ParameterListNonArgs *parameter_list_non_args;
     PassStatement *pass_statement;
     PrintStatement *print_statement;
     ReturnStatement *return_statement;
     Suite *suite;
-    WhileStatement *while_statement;
     TestStatement *test_statement;
+    WhileStatement *while_statement;
     DottedAsNames *dotted_as_names;
     ImportAsNames *import_as_names;
     SuiteBody *suite_body;
@@ -110,8 +110,8 @@ void yyerror(void* context, char const *s)
     OrPhrase *or_phrase;
     SimpleStatement *simple_statement;
     TestListNonEmpty *test_list_non_empty;
-    TestListNonTrailing *test_list_non_trailing;
     AndPhrase *and_phrase;
+    TestListNonTrailing *test_list_non_trailing;
     NotPhrase *not_phrase;
     ComparisonPhrase *comparison_phrase;
     ComparisonList *comparison_list;
@@ -197,6 +197,7 @@ void yyerror(void* context, char const *s)
     char *name;
 }
 
+%type <arith_operator> arith_operator
 %type <comparison_operator> comparison_operator
 %type <dotted_name> dotted_name
 %type <mult_operator> mult_operator
@@ -204,13 +205,12 @@ void yyerror(void* context, char const *s)
 %type <parameter_list_args> parameter_list_args
 %type <parameter_phrase> parameter_phrase
 %type <shift_operator> shift_operator
-%type <single_input> single_input
 %type <slice_list> slice_list
+%type <single_input> single_input
 %type <slice_phrase> slice_phrase
 %type <small_statement> small_statement
 %type <test_phrase_optional> test_phrase_optional
 %type <unary_operator> unary_operator
-%type <arith_operator> arith_operator
 %type <assign_statement> assign_statement
 %type <break_statement> break_statement
 %type <comp_eq> comp_eq
@@ -234,24 +234,24 @@ void yyerror(void* context, char const *s)
 %type <op_bor> op_bor
 %type <op_bxor> op_bxor
 %type <op_divide> op_divide
-%type <op_left_shift> op_left_shift
 %type <op_minus> op_minus
-%type <op_mod> op_mod
+%type <op_left_shift> op_left_shift
 %type <op_mult> op_mult
+%type <op_mod> op_mod
 %type <op_negative> op_negative
 %type <op_plus> op_plus
 %type <op_positive> op_positive
 %type <op_power> op_power
-%type <op_right_shift> op_right_shift
 %type <op_trunc> op_trunc
+%type <op_right_shift> op_right_shift
 %type <parameter_list_kwargs> parameter_list_kwargs
 %type <parameter_list_non_args> parameter_list_non_args
 %type <pass_statement> pass_statement
 %type <print_statement> print_statement
 %type <return_statement> return_statement
 %type <suite> suite
-%type <while_statement> while_statement
 %type <test_statement> test_statement
+%type <while_statement> while_statement
 %type <dotted_as_names> dotted_as_names
 %type <import_as_names> import_as_names
 %type <suite_body> suite_body
@@ -261,8 +261,8 @@ void yyerror(void* context, char const *s)
 %type <or_phrase> or_phrase
 %type <simple_statement> simple_statement
 %type <test_list_non_empty> test_list_non_empty
-%type <test_list_non_trailing> test_list_non_trailing
 %type <and_phrase> and_phrase
+%type <test_list_non_trailing> test_list_non_trailing
 %type <not_phrase> not_phrase
 %type <comparison_phrase> comparison_phrase
 %type <comparison_list> comparison_list
@@ -350,6 +350,9 @@ all_input: /* empty */ { }
          | all_input TOK_INDENT error TOK_NEWLINE { if (interpreterMode) yyerrok; else return 0; }
          ;
 
+arith_operator: op_plus { $$ = ArithOperator::parse($1); $$->linenum = line_num; }
+              | op_minus { $$ = ArithOperator::parse($1); $$->linenum = line_num; }
+              ;
 comparison_operator: comp_lt { $$ = ComparisonOperator::parse($1); $$->linenum = line_num; }
                    | comp_gt { $$ = ComparisonOperator::parse($1); $$->linenum = line_num; }
                    | comp_lt_eq { $$ = ComparisonOperator::parse($1); $$->linenum = line_num; }
@@ -383,15 +386,15 @@ parameter_phrase: test_phrase { $$ = ParameterPhrase::parse($1); $$->linenum = l
 shift_operator: op_left_shift { $$ = ShiftOperator::parse($1); $$->linenum = line_num; }
               | op_right_shift { $$ = ShiftOperator::parse($1); $$->linenum = line_num; }
               ;
+slice_list: slice_phrase { $$ = SliceList::parse($1); $$->linenum = line_num; }
+          | slice_list TOK_COMMA slice_phrase { $$ = SliceList::parse($1, $2, $3); $$->linenum = line_num; }
+          ;
 single_input: TOK_NEWLINE { $$ = SingleInput::parse($1); $$->linenum = line_num; }
             | simple_statement TOK_NEWLINE { $$ = SingleInput::parse($1, $2); $$->linenum = line_num; }
             | if_statement { $$ = SingleInput::parse($1); $$->linenum = line_num; }
             | while_statement { $$ = SingleInput::parse($1); $$->linenum = line_num; }
             | function_definition { $$ = SingleInput::parse($1); $$->linenum = line_num; }
             ;
-slice_list: slice_phrase { $$ = SliceList::parse($1); $$->linenum = line_num; }
-          | slice_list TOK_COMMA slice_phrase { $$ = SliceList::parse($1, $2, $3); $$->linenum = line_num; }
-          ;
 slice_phrase: test_phrase { $$ = SlicePhrase::parse($1); $$->linenum = line_num; }
             | TOK_DOT TOK_DOT TOK_DOT { $$ = SlicePhrase::parse($1, $2, $3); $$->linenum = line_num; }
             | test_phrase_optional TOK_COLON test_phrase_optional { $$ = SlicePhrase::parse($1, $2, $3); $$->linenum = line_num; }
@@ -414,9 +417,6 @@ test_phrase_optional:  { $$ = TestPhraseOptional::parse(); $$->linenum = line_nu
 unary_operator: op_negative { $$ = UnaryOperator::parse($1); $$->linenum = line_num; }
               | op_positive { $$ = UnaryOperator::parse($1); $$->linenum = line_num; }
               | op_bnot { $$ = UnaryOperator::parse($1); $$->linenum = line_num; }
-              ;
-arith_operator: op_plus { $$ = ArithOperator::parse($1); $$->linenum = line_num; }
-              | op_minus { $$ = ArithOperator::parse($1); $$->linenum = line_num; }
               ;
 assign_statement: test_statement TOK_ASSIGN test_statement { $$ = AssignStatement::parse($1, $2, $3); $$->linenum = line_num; }
                 ;
@@ -469,14 +469,14 @@ op_bxor: TOK_BXOR { $$ = OpBxor::parse($1); $$->linenum = line_num; }
        ;
 op_divide: TOK_DIVIDE { $$ = OpDivide::parse($1); $$->linenum = line_num; }
          ;
-op_left_shift: TOK_LEFTSHIFT { $$ = OpLeftShift::parse($1); $$->linenum = line_num; }
-             ;
 op_minus: TOK_MINUS { $$ = OpMinus::parse($1); $$->linenum = line_num; }
         ;
-op_mod: TOK_MODULUS { $$ = OpMod::parse($1); $$->linenum = line_num; }
-      ;
+op_left_shift: TOK_LEFTSHIFT { $$ = OpLeftShift::parse($1); $$->linenum = line_num; }
+             ;
 op_mult: TOK_MULTIPLY { $$ = OpMult::parse($1); $$->linenum = line_num; }
        ;
+op_mod: TOK_MODULUS { $$ = OpMod::parse($1); $$->linenum = line_num; }
+      ;
 op_negative: TOK_MINUS { $$ = OpNegative::parse($1); $$->linenum = line_num; }
            ;
 op_plus: TOK_PLUS { $$ = OpPlus::parse($1); $$->linenum = line_num; }
@@ -485,10 +485,10 @@ op_positive: TOK_PLUS { $$ = OpPositive::parse($1); $$->linenum = line_num; }
            ;
 op_power: TOK_POWER { $$ = OpPower::parse($1); $$->linenum = line_num; }
         ;
-op_right_shift: TOK_RIGHTSHIFT { $$ = OpRightShift::parse($1); $$->linenum = line_num; }
-              ;
 op_trunc: TOK_TRUNC_DIVIDE { $$ = OpTrunc::parse($1); $$->linenum = line_num; }
         ;
+op_right_shift: TOK_RIGHTSHIFT { $$ = OpRightShift::parse($1); $$->linenum = line_num; }
+              ;
 parameter_list_kwargs:  { $$ = ParameterListKwargs::parse(); $$->linenum = line_num; }
                      | TOK_POWER test_phrase { $$ = ParameterListKwargs::parse($1, $2); $$->linenum = line_num; }
                      | TOK_POWER test_phrase TOK_COMMA { $$ = ParameterListKwargs::parse($1, $2, $3); $$->linenum = line_num; }
@@ -507,12 +507,12 @@ return_statement: TOK_RETURN test_list { $$ = ReturnStatement::parse($1, $2); $$
 suite: simple_statement TOK_NEWLINE { $$ = Suite::parse($1, $2); $$->linenum = line_num; }
      | TOK_NEWLINE TOK_INDENT suite_body TOK_OUTDENT { $$ = Suite::parse($1, $2, $3, $4); $$->linenum = line_num; }
      ;
-while_statement: TOK_WHILE test_phrase TOK_COLON suite { $$ = WhileStatement::parse($1, $2, $3, $4); $$->linenum = line_num; }
-               ;
 test_statement: test_phrase { $$ = TestStatement::parse($1); $$->linenum = line_num; }
               | test_list_non_trailing TOK_COMMA { $$ = TestStatement::parse($1, $2); $$->linenum = line_num; }
               | test_list_non_trailing TOK_COMMA test_phrase { $$ = TestStatement::parse($1, $2, $3); $$->linenum = line_num; }
               ;
+while_statement: TOK_WHILE test_phrase TOK_COLON suite { $$ = WhileStatement::parse($1, $2, $3, $4); $$->linenum = line_num; }
+               ;
 dotted_as_names: dotted_name { $$ = DottedAsNames::parse($1); $$->linenum = line_num; }
                | dotted_name TOK_AS TOK_NAME { $$ = DottedAsNames::parse($1, $2, $3); $$->linenum = line_num; }
                | dotted_as_names TOK_COMMA dotted_name { $$ = DottedAsNames::parse($1, $2, $3); $$->linenum = line_num; }
@@ -544,12 +544,12 @@ simple_statement: small_statement { $$ = SimpleStatement::parse($1); $$->linenum
 test_list_non_empty: test_list_non_trailing { $$ = TestListNonEmpty::parse($1); $$->linenum = line_num; }
                    | test_list_non_trailing TOK_COMMA { $$ = TestListNonEmpty::parse($1, $2); $$->linenum = line_num; }
                    ;
-test_list_non_trailing: test_phrase { $$ = TestListNonTrailing::parse($1); $$->linenum = line_num; }
-                      | test_list_non_trailing TOK_COMMA test_phrase { $$ = TestListNonTrailing::parse($1, $2, $3); $$->linenum = line_num; }
-                      ;
 and_phrase: not_phrase { $$ = AndPhrase::parse($1); $$->linenum = line_num; }
           | and_phrase TOK_AND not_phrase { $$ = AndPhrase::parse($1, $2, $3); $$->linenum = line_num; }
           ;
+test_list_non_trailing: test_phrase { $$ = TestListNonTrailing::parse($1); $$->linenum = line_num; }
+                      | test_list_non_trailing TOK_COMMA test_phrase { $$ = TestListNonTrailing::parse($1, $2, $3); $$->linenum = line_num; }
+                      ;
 not_phrase: comparison_phrase { $$ = NotPhrase::parse($1); $$->linenum = line_num; }
           | TOK_NOT not_phrase { $$ = NotPhrase::parse($1, $2); $$->linenum = line_num; }
           ;

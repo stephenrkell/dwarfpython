@@ -37,7 +37,8 @@ ffi_type *ffi_type_for_concrete_dwarf_type(shared_ptr<type_die> p_t)
         }
 #undef ENC_AND_SZ
     }
-    else if (p_t->get_tag() == DW_TAG_pointer_type)
+    else if (p_t->get_tag() == DW_TAG_pointer_type
+			|| p_t->get_tag() == DW_TAG_reference_type)
     { 
         return &ffi_type_pointer;
     }
