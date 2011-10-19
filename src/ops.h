@@ -4,8 +4,6 @@
 #include "parathon.h"
 
 class Statement;
-class process_image;
-extern process_image image;
 
 /* Primitive operations defined by the interpreter on AST nodes. */
 
@@ -34,7 +32,7 @@ void assign_to(val loc, val v);
 
 /* Print an object to a stream, as a string. */
 void print_value_to_stream(void *value, std::ostream& s, 
-	shared_ptr<type_die> descr = shared_ptr<type_die>());
+	shared_ptr<spec::type_die> descr = shared_ptr<spec::type_die>());
 
 void print_value_to_stream(val value, std::ostream& s);
 

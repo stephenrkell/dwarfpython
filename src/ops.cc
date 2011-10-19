@@ -10,16 +10,29 @@
 #include <cstdarg>
 
 #include <dwarfpp/cxx_compiler.hpp>
+#include <dwarfpp/regs.hpp>
 
-#include <processimage/process.hpp>
+#include <pmirror/process.hpp>
+#include <pmirror/unw_regs.hpp>
+
+#include <libreflect.hpp>
+
 using namespace dwarf;
+using dwarf::spec::type_die;
+using dwarf::spec::base_type_die;
+using dwarf::spec::array_type_die;
+using dwarf::spec::pointer_type_die;
+using dwarf::spec::with_dynamic_location_die;
+using dwarf::spec::subprogram_die;
+using pmirror::process_image;
+using pmirror::self;
 
 val normalize_val(val value)
 {
 	if (value.is_immediate) return value;
 	else
 	{
-		auto descr = image.discover_object_descr(
+		auto descr = self.discover_object_descr(
 			reinterpret_cast<process_image::addr_t>(value.i_ptr), 
 			shared_ptr<type_die>());
 		if (descr->get_tag() != DW_TAG_base_type) return value;
@@ -137,7 +150,7 @@ bool is_true(val value)
 		if (value == None) return false;
 		
 		/* test sequences and mappings (only arrays for now -- FIXME) */
-		auto raw_descr = image.discover_object_descr(
+		auto raw_descr = self.discover_object_descr(
 			reinterpret_cast<process_image::addr_t>(value.i_ptr),
 			shared_ptr<type_die>());
 		assert(raw_descr);
@@ -172,8 +185,6 @@ bool is_true(val value)
 		
 }
 
-process_image image(-1); // -1 means "this process"
-
 bool lookup_name_pred(spec::basic_die& d)
 {
 	/* We want a DIE that has a runtime location and,
@@ -181,11 +192,11 @@ bool lookup_name_pred(spec::basic_die& d)
  	* is not just a declaration. */
 	std::cerr << "Testing die with name " << (d.get_name() ? *d.get_name() : "(no name)")
 		<< std::endl;
-	if (dynamic_cast<spec::with_runtime_location_die *>(&d) 
-	 || dynamic_cast<spec::with_stack_location_die *>(&d) 
+	if (dynamic_cast<spec::with_static_location_die *>(&d) 
+	 || dynamic_cast<spec::with_dynamic_location_die *>(&d) 
 	 || dynamic_cast<spec::member_die *>(&d))
 	{   /* About ^^ this test: locals, formal parameters and fields are not 
-	 	* with_runtime_location_dies, but they have location in a particular
+		 * with_static_location_dies, but they have location in a particular
 		 * execution context. We assume that the caller (of lookup_name) will
 		 * have such a context available. */
 		spec::program_element_die *p_prog_el = dynamic_cast<spec::program_element_die *>(&d);
@@ -248,7 +259,7 @@ static int lexical_name_lookup_handler(
 
 	// if we hit an entry point...
 	if (image->discover_object_memory_kind(
-		(process_image::addr_t)frame_ip) == process_image::ANON)
+		(process_image::addr_t)frame_ip) == process_image::ANON) // HACK: want a better test here
 	{
 		std::cerr << "Stack walk hit an entry point..." << std::endl;
 		
@@ -264,10 +275,13 @@ static int lexical_name_lookup_handler(
 			dynamic_pointer_cast<spec::with_named_children_die>(discovered));
 
 		// calculate and output the frame base
-		libunwind_regs my_regs(&frame_cursor); 
+		pmirror::libunwind_regs my_regs(&frame_cursor); 
 		output->frame_base = dwarf::lib::evaluator(
 			/* loclist = */ *dynamic_pointer_cast<spec::subprogram_die>(discovered)->get_frame_base(),
-			/* vaddr = */ frame_ip - image->get_dieset_base(discovered->get_ds()), /* This is our file-relative IP within the function whose frame includes the local allocation */
+			/* vaddr = */ /* needs to be CU-relative! */
+				frame_ip - /*image->get_dieset_base(discovered->get_ds())*/
+				(discovered->enclosing_compile_unit()->get_low_pc() ? 
+				 discovered->enclosing_compile_unit()->get_low_pc()->addr : 0UL), /* This is our file-relative IP within the function whose frame includes the local allocation */
 			/* spec = */ spec::DEFAULT_DWARF_SPEC,
 			/* regs = */ &my_regs,
 			/* optional<Dwarf_Signed> frame_base = */ boost::optional<lib::Dwarf_Signed>(),
@@ -370,7 +384,7 @@ val lookup_name(const std::string& name)
 	
 	assert(starting_points.size() == 0);
 	stack_walk_output output = { 0, 0, /* will be filled in */ &starting_points };
-	image.walk_stack(0 /* unused */, lexical_name_lookup_handler, &output);
+	self.walk_stack(0 /* unused */, lexical_name_lookup_handler, &output);
 	std::cerr << "Now we have " << starting_points.size() << " starting points" << std::endl;
 	shared_ptr<subprogram_die> found_lookup_frame;
 	if (starting_points.size())
@@ -394,7 +408,7 @@ val lookup_name(const std::string& name)
 	{
 		try
 		{
-			auto cur = image.files[i->second].p_ds->toplevel()->get_first_child();
+			auto cur = self.files[i->second].p_ds->toplevel()->get_first_child();
 			do
 			{
 				boost::shared_ptr<spec::with_named_children_die> to_add
@@ -408,43 +422,51 @@ val lookup_name(const std::string& name)
 	std::cerr << "Finally we have " << starting_points.size() << " starting points" << std::endl;
 	
 	// do the lookup
-	auto result = resolve_first(split_path, starting_points, lookup_name_pred);
+	auto result = pmirror::resolve_first(split_path, starting_points, lookup_name_pred);
 	if (!result) return Invalid; 
 	else
 	{
 		std::cerr << "Found a die... breakpoint here please." << std::endl;
 
 		val r; // this will be returned
-		if (dynamic_pointer_cast<spec::with_runtime_location_die>(result))
+		if (dynamic_pointer_cast<spec::with_static_location_die>(result))
 		{
-			process_image::addr_t p_obj = image.get_object_from_die(
+			process_image::addr_t p_obj = self.get_object_from_die(
 				/* FIXME: get vaddr from ParathonContext */
-				boost::dynamic_pointer_cast<spec::with_runtime_location_die>(result), 0);
+				boost::dynamic_pointer_cast<spec::with_static_location_die>(result), 0);
 			r = (val) { false, { i_ptr: reinterpret_cast<void*>(p_obj) }, val::TBD };
 		}
-		else if (dynamic_pointer_cast<spec::with_stack_location_die>(result)
-		&& dynamic_pointer_cast<spec::with_stack_location_die>(result)->get_location())
+		else if (dynamic_pointer_cast<spec::with_dynamic_location_die>(result))
 		{
 			/* Now where did we put that stack frame? */
 			assert(found_lookup_frame);
 			/* HACK: use caller_sp directly as the frame base, for now */
-			lib::Dwarf_Unsigned addr = dwarf::lib::evaluator(
-				/* loclist = */ *dynamic_pointer_cast<spec::with_stack_location_die>(result)->get_location(),
-				/* vaddr = */ output.ip - image.get_dieset_base(found_lookup_frame->get_ds()), /* This is our file-relative IP within the function whose frame includes the local allocation */
-				/* spec = */ spec::DEFAULT_DWARF_SPEC,
-				/* regs = */ 0,
-				/* optional<Dwarf_Signed> frame_base = */ output.frame_base,
-				/* const std::stack<Dwarf_Unsigned>& initial_stack = */ std::stack<lib::Dwarf_Unsigned>()
-			).tos();
+			auto found_location = dynamic_pointer_cast<spec::with_dynamic_location_die>(result);
+			lib::Dwarf_Unsigned addr = found_location->calculate_addr(
+				output.frame_base,
+				output.ip - /*image.get_dieset_base(found_lookup_frame->get_ds())*/
+					(found_lookup_frame->enclosing_compile_unit()->get_low_pc() ?
+					 found_lookup_frame->enclosing_compile_unit()->get_low_pc()->addr : 0UL), /* This is our file-relative IP within the function whose frame includes the local allocation */
+				/* regs = */ 0);
+			
+				
+				
+			
+// 			lib::Dwarf_Unsigned addr = dwarf::lib::evaluator(
+// 				/* loclist = */ *dynamic_pointer_cast<spec::with_dynamic_location_die>(result)->get_location(),
+// 				/* vaddr = */ /* neds to be CU-relative! */
+// 				output.ip - /*image.get_dieset_base(found_lookup_frame->get_ds())*/
+// 				(found_lookup_frame->enclosing_compile_unit()->get_low_pc() ?
+// 				*found_lookup_frame->enclosing_compile_unit()->get_low_pc() : 0), /* This is our file-relative IP within the function whose frame includes the local allocation */
+// 				/* spec = */ spec::DEFAULT_DWARF_SPEC,
+// 				/* regs = */ 0,
+// 				/* optional<Dwarf_Signed> frame_base = */ output.frame_base,
+// 				/* const std::stack<Dwarf_Unsigned>& initial_stack = */ std::stack<lib::Dwarf_Unsigned>()
+// 			).tos();
 			std::cerr << "We have calculated that variable " << name 
 				<< " in frame based at " << std::hex << output.frame_base << std::dec
 				<< " lies at address " << std::hex << addr << std::dec << std::endl;
 			r = (val) { false, { i_ptr: reinterpret_cast<void*>(addr) }, val::TBD };
-		}
-		else if (dynamic_pointer_cast<spec::member_die>(result))
-		{
-			/* Similar story, just slightly different */
-			assert(false);
 		}
 		else
 		{
@@ -455,7 +477,7 @@ val lookup_name(const std::string& name)
 		if (result->get_tag() == DW_TAG_subprogram) return r;
 		else
 		{
-			auto result_wsl = dynamic_pointer_cast<with_stack_location_die>(result);
+			auto result_wsl = dynamic_pointer_cast<with_dynamic_location_die>(result);
 			assert(result_wsl);
 			if (result_wsl->get_type() &&
 				(*result_wsl->get_type())->get_tag() == DW_TAG_reference_type)
@@ -484,8 +506,8 @@ void print_value_to_stream(void *value, std::ostream& s,
   			image.discover_object_descr(reinterpret_cast<process_image::addr_t>(value),
   				opt_descr) 
 			};*/
-	image.update();
-	auto descr = image.discover_object_descr(
+	self.update(); // HACK
+	auto descr = self.discover_object_descr(
 		reinterpret_cast<process_image::addr_t>(value),
 		opt_descr);
 
@@ -669,8 +691,8 @@ int interpret(Statement *statement) //, encap::subprogram_die *subp, va_list ap,
 val call_function(val function, std::vector<val> *params)
 {
 	//assert(function.descr->get_tag() == DW_TAG_subprogram);
-	shared_ptr<spec::with_runtime_location_die> discovered 
-	 = image.discover_object((process_image::addr_t)function.i_ptr, 0);
+	shared_ptr<spec::with_static_location_die> discovered 
+	 = self.discover_object((process_image::addr_t)function.i_ptr, 0);
 	assert(discovered && discovered->get_tag() == DW_TAG_subprogram);
 	shared_ptr<subprogram_die> subp = dynamic_pointer_cast<subprogram_die>(discovered);
 	

@@ -2,6 +2,10 @@
 #include "util.h"
 #include <cassert>
 
+using namespace dwarf;
+using spec::type_die;
+using spec::base_type_die;
+
 ffi_type *ffi_type_for_concrete_dwarf_type(shared_ptr<type_die> p_t)
 {
     if (!p_t)

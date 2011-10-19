@@ -75,24 +75,24 @@ void yyerror(void* context, char const *s)
     ContinueStatement *continue_statement;
     DeleteStatement *delete_statement;
     FunctionDefinition *function_definition;
-    GlobalStatement *global_statement;
     IfStatement *if_statement;
+    GlobalStatement *global_statement;
     ImportStatement *import_statement;
     OpBand *op_band;
     OpBnot *op_bnot;
     OpBor *op_bor;
     OpBxor *op_bxor;
     OpDivide *op_divide;
-    OpMinus *op_minus;
     OpLeftShift *op_left_shift;
-    OpMult *op_mult;
     OpMod *op_mod;
+    OpMinus *op_minus;
+    OpMult *op_mult;
     OpNegative *op_negative;
-    OpPlus *op_plus;
     OpPositive *op_positive;
+    OpPlus *op_plus;
+    OpRightShift *op_right_shift;
     OpPower *op_power;
     OpTrunc *op_trunc;
-    OpRightShift *op_right_shift;
     ParameterListKwargs *parameter_list_kwargs;
     ParameterListNonArgs *parameter_list_non_args;
     PassStatement *pass_statement;
@@ -226,24 +226,24 @@ void yyerror(void* context, char const *s)
 %type <continue_statement> continue_statement
 %type <delete_statement> delete_statement
 %type <function_definition> function_definition
-%type <global_statement> global_statement
 %type <if_statement> if_statement
+%type <global_statement> global_statement
 %type <import_statement> import_statement
 %type <op_band> op_band
 %type <op_bnot> op_bnot
 %type <op_bor> op_bor
 %type <op_bxor> op_bxor
 %type <op_divide> op_divide
-%type <op_minus> op_minus
 %type <op_left_shift> op_left_shift
-%type <op_mult> op_mult
 %type <op_mod> op_mod
+%type <op_minus> op_minus
+%type <op_mult> op_mult
 %type <op_negative> op_negative
-%type <op_plus> op_plus
 %type <op_positive> op_positive
+%type <op_plus> op_plus
+%type <op_right_shift> op_right_shift
 %type <op_power> op_power
 %type <op_trunc> op_trunc
-%type <op_right_shift> op_right_shift
 %type <parameter_list_kwargs> parameter_list_kwargs
 %type <parameter_list_non_args> parameter_list_non_args
 %type <pass_statement> pass_statement
@@ -448,12 +448,12 @@ delete_statement: TOK_DEL test_list { $$ = DeleteStatement::parse($1, $2); $$->l
                 ;
 function_definition: TOK_DEF name_phrase TOK_OPEN_CURVED parameter_list TOK_CLOSE_CURVED TOK_COLON suite { $$ = FunctionDefinition::parse($1, $2, $3, $4, $5, $6, $7); $$->linenum = line_num; }
                    ;
-global_statement: TOK_GLOBAL name_phrase { $$ = GlobalStatement::parse($1, $2); $$->linenum = line_num; }
-                | global_statement TOK_COMMA name_phrase { $$ = GlobalStatement::parse($1, $2, $3); $$->linenum = line_num; }
-                ;
 if_statement: TOK_IF test_phrase TOK_COLON suite { $$ = IfStatement::parse($1, $2, $3, $4); $$->linenum = line_num; }
             | if_statement TOK_ELSE TOK_COLON suite { $$ = IfStatement::parse($1, $2, $3, $4); $$->linenum = line_num; }
             ;
+global_statement: TOK_GLOBAL name_phrase { $$ = GlobalStatement::parse($1, $2); $$->linenum = line_num; }
+                | global_statement TOK_COMMA name_phrase { $$ = GlobalStatement::parse($1, $2, $3); $$->linenum = line_num; }
+                ;
 import_statement: TOK_IMPORT dotted_as_names { $$ = ImportStatement::parse($1, $2); $$->linenum = line_num; }
                 | TOK_FROM dotted_name TOK_IMPORT import_as_names { $$ = ImportStatement::parse($1, $2, $3, $4); $$->linenum = line_num; }
                 | TOK_FROM dotted_name TOK_IMPORT TOK_OPEN_CURVED import_as_names TOK_CLOSE_CURVED { $$ = ImportStatement::parse($1, $2, $3, $4, $5, $6); $$->linenum = line_num; }
@@ -469,26 +469,26 @@ op_bxor: TOK_BXOR { $$ = OpBxor::parse($1); $$->linenum = line_num; }
        ;
 op_divide: TOK_DIVIDE { $$ = OpDivide::parse($1); $$->linenum = line_num; }
          ;
-op_minus: TOK_MINUS { $$ = OpMinus::parse($1); $$->linenum = line_num; }
-        ;
 op_left_shift: TOK_LEFTSHIFT { $$ = OpLeftShift::parse($1); $$->linenum = line_num; }
              ;
-op_mult: TOK_MULTIPLY { $$ = OpMult::parse($1); $$->linenum = line_num; }
-       ;
 op_mod: TOK_MODULUS { $$ = OpMod::parse($1); $$->linenum = line_num; }
       ;
+op_minus: TOK_MINUS { $$ = OpMinus::parse($1); $$->linenum = line_num; }
+        ;
+op_mult: TOK_MULTIPLY { $$ = OpMult::parse($1); $$->linenum = line_num; }
+       ;
 op_negative: TOK_MINUS { $$ = OpNegative::parse($1); $$->linenum = line_num; }
+           ;
+op_positive: TOK_PLUS { $$ = OpPositive::parse($1); $$->linenum = line_num; }
            ;
 op_plus: TOK_PLUS { $$ = OpPlus::parse($1); $$->linenum = line_num; }
        ;
-op_positive: TOK_PLUS { $$ = OpPositive::parse($1); $$->linenum = line_num; }
-           ;
+op_right_shift: TOK_RIGHTSHIFT { $$ = OpRightShift::parse($1); $$->linenum = line_num; }
+              ;
 op_power: TOK_POWER { $$ = OpPower::parse($1); $$->linenum = line_num; }
         ;
 op_trunc: TOK_TRUNC_DIVIDE { $$ = OpTrunc::parse($1); $$->linenum = line_num; }
         ;
-op_right_shift: TOK_RIGHTSHIFT { $$ = OpRightShift::parse($1); $$->linenum = line_num; }
-              ;
 parameter_list_kwargs:  { $$ = ParameterListKwargs::parse(); $$->linenum = line_num; }
                      | TOK_POWER test_phrase { $$ = ParameterListKwargs::parse($1, $2); $$->linenum = line_num; }
                      | TOK_POWER test_phrase TOK_COMMA { $$ = ParameterListKwargs::parse($1, $2, $3); $$->linenum = line_num; }

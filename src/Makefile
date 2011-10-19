@@ -1,7 +1,7 @@
 CXXFLAGS += -Iparser -I.
 CXXFLAGS += -std=c++0x -g3 -fno-eliminate-unused-debug-types
 
-LDLIBS += -lfl -lreadline -lffi -ldwarfpp -lsrk31c++ -lc++fileno -ldwarf -lelf -lgc -lstdc++ -lunwind -lunwind-ptrace -lunwind-$(shell uname -m) -lprocessimage -lboost_regex
+LDLIBS += -lfl -lreadline -lffi -ldwarfpp -lsrk31c++ -lc++fileno -ldwarf -lelf -lgc -lstdc++ -lunwind -lunwind-ptrace -lunwind-$(shell uname -m) -lreflect -lboost_regex
 
 C_SRC := buffer.c
 CC_SRC := main.cc ops.cc

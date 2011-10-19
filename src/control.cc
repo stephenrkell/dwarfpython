@@ -1,17 +1,20 @@
-#include <processimage/process.hpp>
+#include <libreflect.hpp>
 #include "ast.h"
 #include "parathon.h"
 #include "ops.h"
+
+using pmirror::process_image;
+using pmirror::self;
 
 val SuiteBody::evaluate() 
 {
 	/* HACK: if our caller is a generated entry point, catch returns. */
 	std::cerr << "SuiteBody::evaluate() has caller address " << std::hex
 		<< reinterpret_cast<process_image::addr_t>(__builtin_return_address(0)) << std::dec
-		<< " of memory kind " << image.discover_object_memory_kind(
+		<< " of memory kind " << self.discover_object_memory_kind(
 		reinterpret_cast<process_image::addr_t>(__builtin_return_address(0)))
 		<< std::endl;
-	if (image.discover_object_memory_kind(
+	if (self.discover_object_memory_kind(
 		reinterpret_cast<process_image::addr_t>(__builtin_return_address(0))) 
 		== process_image::ANON)
 	{

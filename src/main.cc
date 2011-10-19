@@ -7,7 +7,7 @@
 #include <string.h>
 #include "signal.h"
 #include "setjmp.h"
-#include <dwarfpp/encap_adt.hpp>
+#include <dwarfpp/encap.hpp>
 
 //builtins(dwarf::spec::DEFAULT_DWARF_SPEC);
 boost::shared_ptr<dwarf::encap::dieset> p_builtins;
@@ -38,67 +38,67 @@ shared_ptr<encap::array_type_die> p_builtin_const_char_array_type;
 void init() __attribute__((constructor));
 void init()
 {
+	using namespace dwarf::encap;
+	using boost::dynamic_pointer_cast;
+	
 	p_builtins = boost::make_shared<dwarf::encap::dieset>(dwarf::spec::DEFAULT_DWARF_SPEC);
-    dwarf::encap::dieset& builtins = *p_builtins;
+	dwarf::encap::dieset& builtins = *p_builtins;
 
 	/* We don't need to call delete on these, nor to explicitly add them
-     * to the dieset, because the Die_encap_base constructor will make 
-     * shared_ptrs out of them, and will also add them to the dieset. */
-    auto p_compile_unit_die = new encap::compile_unit_die(
-    	dynamic_cast<encap::Die_encap_base&>(*builtins[0UL]), std::string("cu.dwarfpython"));
+     * to the dieset, because the factory will make 
+     * shared_ptrs out of them, and also add them to the dieset. */
+	dwarf::encap::factory& f = dwarf::encap::factory::for_spec(dwarf::spec::DEFAULT_DWARF_SPEC);
+	
+	// alias the toplevel DIE as an encap::basic_die, to satisfy argument matching
+	auto toplevel_as_basic = dynamic_pointer_cast<encap::basic_die>(
+		builtins[0UL]);
+	assert(toplevel_as_basic);
+	
+	auto p_compile_unit_die = dynamic_pointer_cast<encap::compile_unit_die>(
+		f.create_die(DW_TAG_compile_unit, toplevel_as_basic, std::string("cu.dwarfpython")));
+		
+		
+		
+	assert(p_compile_unit_die);
     encap::rangelist rs; p_compile_unit_die->set_ranges(rs);
 
-    auto p_pointer_type_die = new encap::pointer_type_die(
-     dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")), 
-        std::string("void_pointer_type"));
+    auto p_pointer_type_die = dynamic_pointer_cast<encap::pointer_type_die>(
+    	 f.create_die(DW_TAG_pointer_type, p_compile_unit_die, std::string("void_pointer_type")));
 	p_pointer_type_die->set_byte_size(sizeof (void*));
 
-    auto p_reference_type_die = new encap::reference_type_die(
-     dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")), 
-        std::string("void_reference_type"));
+    auto p_reference_type_die = dynamic_pointer_cast<encap::reference_type_die>(
+		f.create_die(DW_TAG_reference_type, p_compile_unit_die, std::string("void_reference_type")));
 	p_reference_type_die->set_byte_size(sizeof (void*));
 
-    auto p_int_die = new encap::base_type_die(
-     dynamic_cast<encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")), 
-      std::string("int"));
-    p_int_die->set_byte_size(sizeof(int)).set_encoding(DW_ATE_signed);
+    auto p_int_die = dynamic_pointer_cast<encap::base_type_die>(
+		f.create_die(DW_TAG_base_type, p_compile_unit_die, std::string("int")));
+    p_int_die->set_byte_size(sizeof(int))->set_encoding(DW_ATE_signed);
 
-    auto p_double_die = new encap::base_type_die(
-     dynamic_cast<encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")),
-      std::string("double"));
-    p_double_die->set_byte_size(sizeof(double)).set_encoding(DW_ATE_float);
+    auto p_double_die = dynamic_pointer_cast<encap::base_type_die>(
+		f.create_die(DW_TAG_base_type, p_compile_unit_die, std::string("double")));
+    p_double_die->set_byte_size(sizeof(double))->set_encoding(DW_ATE_float);
     
 //    // fix up the DIE ptrs in None and NotImplemented to point at the void* DIE
 //    valNone.kind = builtins.toplevel()->resolve("cu.dwarfpython::void_pointer_type");
 //    valNotImplemented.descr = valNone.descr; 
 //    // note: descr ptr in Invalid stays 0, as that's what distinguishes it!
     
-    auto p_char_die = new dwarf::encap::base_type_die(
-     dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")), 
-     std::string("char"));
-    p_char_die->set_byte_size(1).set_encoding(DW_ATE_signed_char);
+    auto p_char_die = dynamic_pointer_cast<encap::base_type_die>(
+     	f.create_die(DW_TAG_base_type, p_compile_unit_die, std::string("char")));
+    p_char_die->set_byte_size(1)->set_encoding(DW_ATE_signed_char);
 
-    auto p_const_char_die = new dwarf::encap::const_type_die(
-     dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")),
-      boost::optional<const std::string&>());
-    p_const_char_die->set_type(
-         boost::dynamic_pointer_cast<dwarf::spec::type_die>(
-             p_char_die->get_this()));
+    auto p_const_char_die = dynamic_pointer_cast<encap::const_type_die>(
+		f.create_die(DW_TAG_const_type, p_compile_unit_die));
+    p_const_char_die->set_type(dynamic_pointer_cast<spec::type_die>(p_char_die));
     
-    auto p_const_char_pointer_type_die = new dwarf::encap::pointer_type_die(
-     dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")), 
-     std::string("const_char_pointer_type"));
-    p_const_char_pointer_type_die->set_type(
-    	boost::dynamic_pointer_cast<dwarf::spec::type_die>(
-        	p_const_char_die->get_this()));
-	p_pointer_type_die->set_byte_size(sizeof (char*));
+    auto p_const_char_pointer_type_die = dynamic_pointer_cast<encap::pointer_type_die>(
+		f.create_die(DW_TAG_pointer_type, p_compile_unit_die, std::string("const_char_pointer_type")));
+	p_const_char_pointer_type_die->set_type(dynamic_pointer_cast<spec::type_die>(p_const_char_die));
+	p_const_char_pointer_type_die->set_byte_size(sizeof (char*));
 
-    auto p_const_char_array_type_die = new dwarf::encap::array_type_die(
-     dynamic_cast<dwarf::encap::Die_encap_base&>(*builtins.toplevel()->resolve("cu.dwarfpython")), 
-     std::string("const_char_array_type"));
-    p_const_char_array_type_die->set_type(
-    	boost::dynamic_pointer_cast<dwarf::spec::type_die>(
-        	p_const_char_die->get_this()));
+    auto p_const_char_array_type_die = dynamic_pointer_cast<encap::array_type_die>(
+     	f.create_die(DW_TAG_array_type, p_compile_unit_die, std::string("const_char_array_type")));
+    p_const_char_array_type_die->set_type(dynamic_pointer_cast<spec::type_die>(p_const_char_die));
 
     // store pointers to the builtin int/double/string types, for pointer-comparison
     p_builtin_int_type = dynamic_pointer_cast<encap::base_type_die>(

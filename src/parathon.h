@@ -3,7 +3,6 @@
 
 #include <dwarfpp/adt.hpp>
 #include <dwarfpp/encap.hpp>
-#include <dwarfpp/encap_adt.hpp>
 
 //class ParathonValue;
 /*typedef void ParathonValue;*/ /* val replaces ParathonValue */
@@ -18,14 +17,6 @@ using boost::shared_ptr;
 using boost::dynamic_pointer_cast;
 using namespace dwarf;
 using boost::shared_ptr;
-using spec::type_die;
-using spec::base_type_die;
-using spec::array_type_die;
-using spec::const_type_die;
-using spec::pointer_type_die;
-using spec::subprogram_die;
-using spec::basic_die;
-using spec::with_stack_location_die;
 
 extern shared_ptr<encap::base_type_die> p_builtin_int_type; // overwritten in init
 extern shared_ptr<encap::base_type_die> p_builtin_double_type; // overwritten in init

@@ -1,6 +1,6 @@
 #include <sys/mman.h>
 #include <string.h>
-#include <processimage/process.hpp>
+#include <libreflect.hpp>
 
 #include "parathon.h"
 #include "ast.h"
@@ -9,6 +9,8 @@
 using dwarf::lib::Dwarf_Unsigned;
 using dwarf::lib::Dwarf_Ranges;
 using dwarf::lib::Dwarf_Addr;
+using pmirror::process_image;
+using pmirror::self;
 
 /* This helper keeps vtable initialization complexity out
  * of the generated entry points. */
@@ -43,10 +45,13 @@ val FunctionDefinition::evaluate()
      * - defining a "generic" (arguments-indirected) entry point for it
      *   (we leave other, layout-specialised entry points until call time) */
      
-    auto subprogram_die = new encap::subprogram_die(
-     dynamic_cast<encap::Die_encap_base&>(*(*p_builtins).toplevel()->resolve("cu.dwarfpython")), 
-      std::string(name->getName()));
-    // give it a low pc and a high pc
+	dwarf::encap::factory& f = dwarf::encap::factory::for_spec(dwarf::spec::DEFAULT_DWARF_SPEC);
+
+	auto cu = dynamic_pointer_cast<encap::basic_die>((*p_builtins).toplevel()->resolve("cu.dwarfpython"));
+	auto subprogram_die = 	dynamic_pointer_cast<encap::subprogram_die>(
+		f.create_die(DW_TAG_subprogram, cu, 
+		std::string(name->getName())));
+
     // -- just allocate a heap block big enough for 
     //     the main trampoline + n (say 8 or 16) different specialised entry points
     //     --- maybe make it page-sized so we can give it PROT_EXEC
@@ -60,11 +65,20 @@ val FunctionDefinition::evaluate()
     
     // now adjust the containing CU's rangelist to include this range
     assert(subprogram_die->enclosing_compile_unit());
-    subprogram_die->enclosing_compile_unit()->get_ranges()->push_back(
+	auto opt_ranges = subprogram_die->enclosing_compile_unit()->get_ranges();
+	assert(opt_ranges);
+	auto ranges = *opt_ranges;
+	ranges.push_back(
     	(lib::Dwarf_Ranges) { 
         	(unsigned long) ret, 
             (unsigned long) ret + sysconf(_SC_PAGE_SIZE), 
             lib::DW_RANGES_ENTRY });
+	assert(ranges.size() > 0);
+	assert(dynamic_pointer_cast<encap::compile_unit_die>(subprogram_die->enclosing_compile_unit()));
+	dynamic_pointer_cast<encap::compile_unit_die>(subprogram_die->enclosing_compile_unit())
+		->set_ranges(ranges);
+	auto p_encap_cu = dynamic_pointer_cast<encap::compile_unit_die>(subprogram_die->enclosing_compile_unit()).get();	
+	assert(subprogram_die->enclosing_compile_unit()->get_ranges()->size() > 0);
     
     // give it a frame_base? YES, just make it ebp (no lexical blocks to worry about)
     Dwarf_Unsigned opcodes1[] = { DW_OP_breg4, sizeof (int) };     // vaddr 0x0..0x1
@@ -143,9 +157,14 @@ val FunctionDefinition::evaluate()
 	unsigned offset = 0;
     for (int i = 0; i < parameter_list->size(); i++)
     {
-    	auto fp = new encap::formal_parameter_die(*subprogram_die,
-            std::string(
-            	dynamic_cast<NamePhrase&>(*parameter_list->get(i)->getValue()).getName()));
+		auto fp = dynamic_pointer_cast<encap::formal_parameter_die>(
+			f.create_die(
+				DW_TAG_formal_parameter,
+				subprogram_die,
+				std::string(
+					dynamic_cast<NamePhrase&>(*parameter_list->get(i)->getValue()).getName()
+				)
+			));
 		
 		// add the location description -- 
 		Dwarf_Unsigned opcodes[] = { DW_OP_fbreg, offset };
@@ -198,7 +217,7 @@ val FunctionDefinition::evaluate()
     // because before writing to the mmap()'d region, it need not show up
     // in the memory map (precisely, we need it to show up as nonempty and [anon],
     // and it might just be zero-sized and/or unnamed).
-    image.register_anon_segment_description((process_image::addr_t)ret, 
+    self.register_anon_segment_description((process_image::addr_t)ret, 
         p_builtins, (process_image::addr_t) 0);
     
     return None;
