@@ -5,6 +5,7 @@
 #include "parathon.h"
 #include "ast.h"
 #include "ops.h"
+#include "archdep.h"
 
 using dwarf::lib::Dwarf_Unsigned;
 using dwarf::lib::Dwarf_Ranges;
@@ -19,18 +20,6 @@ val evaluate(Statement *arg)
 	std::cerr << "Received a call from a generated entry point!" << std::endl;
 	return arg->evaluate();
 }
-
-const unsigned MARKER_ADDRESS = 0x12345678U;
-
-void *ideal_entry_point(...) __attribute__((optimize(0)));
-void *ideal_entry_point(...)
-{
-	// call through an immediately-addressed object's vtable.
-    return reinterpret_cast<Statement*>(MARKER_ADDRESS)->evaluate().i_ptr;
-}
-
-void end_ideal_entry_point(void);
-void end_ideal_entry_point(void) {}
 
 val FunctionDefinition::evaluate()
 {
@@ -79,84 +68,12 @@ val FunctionDefinition::evaluate()
 		->set_ranges(ranges);
 	auto p_encap_cu = dynamic_pointer_cast<encap::compile_unit_die>(subprogram_die->enclosing_compile_unit()).get();	
 	assert(subprogram_die->enclosing_compile_unit()->get_ranges()->size() > 0);
-    
-    // give it a frame_base? YES, just make it ebp (no lexical blocks to worry about)
-    Dwarf_Unsigned opcodes1[] = { DW_OP_breg4, sizeof (int) };     // vaddr 0x0..0x1
-    Dwarf_Unsigned opcodes2[] = { DW_OP_breg4, 2 * sizeof (int) }; // vaddr 0x1..0x3
-    Dwarf_Unsigned opcodes3[] = { DW_OP_breg5, 2 * sizeof (int) }; // vaddr 0x3..LAST+1
-    
-    /* These are x86-specific, assuming that an entry point has this prologue:
-    
-       0:   55                      push   %ebp
-       1:   89 e5                   mov    %esp,%ebp
-       3:   83 ec 10                sub    $0x10,%esp # <-- here 0x10 is just size of locals, 16-byte rounded
 
-       and this epilogue:
-
-      10:   c9                      leave  
-      11:   c3                      ret    
-      
-      And this needs the following loclist (reg4 is esp, reg5 is ebp):
-(loclist) {loc described by { 0x1: DW_OP_breg4((signed) 4); } (for vaddr 0x0..0x1), % i.e. esp + 1 word
-           loc described by { 0x1: DW_OP_breg4((signed) 8); } (for vaddr 0x1..0x3), % i.e. esp + 2 words
-           loc described by { 0x1: DW_OP_breg5((signed) 8); } (for vaddr 0x3..0x12)}% i.e. ebp + 2 words
-    */
-//     unsigned char prologue_bytes[] = { 0x55, 0x89, 0xe5, 0x83, 0xec, 0x00 /* SIZE_OF_LOCALS */ };
-//     unsigned char call_bytes[]     = { 0xe8, 0x00, 0x00, 0x00, 0x00 }; // to be filled in...
-//     /* needs to be PC-relative! */
-//     *(signed*)&call_bytes[1] = (unsigned) &interpret
-//      - ((unsigned) ret + sizeof prologue_bytes + sizeof call_bytes);
-//     unsigned char epilogue_bytes[] = { 0xc9, 0xc3 };
-//     
-//     // now blat the bytes into the mmap()-returned block
-//     unsigned char *pos = (unsigned char *) ret;
-//     memcpy(pos, &prologue_bytes[0], sizeof prologue_bytes); pos += sizeof prologue_bytes;
-//     memcpy(pos, &call_bytes[0], sizeof call_bytes); pos += sizeof call_bytes;
-//     memcpy(pos, &epilogue_bytes[0], sizeof epilogue_bytes); pos += sizeof epilogue_bytes;
-//     // FIXME: remember how much we wrote, so we can manage the free space within this block
-
-	// new method: use the ideal entry point 
-    size_t entry_point_size = (char*)&end_ideal_entry_point - (char*)&ideal_entry_point;
-    // blat the bytes
-    memcpy(ret, (void*) ideal_entry_point, entry_point_size);
-    // find the AST node pointer in the instruction sequence
-    Statement** searchp = reinterpret_cast<Statement**>(ret); 
-    while (!((char*) searchp > (char*) ret + entry_point_size - sizeof (Statement*))) 
-    {
-        // debugging
-    	std::cerr << "Bytes: " << std::hex  
-        	<< (unsigned) *reinterpret_cast<unsigned char*>(searchp) << " "
-            << (unsigned) *(reinterpret_cast<unsigned char*>(searchp)+1) << " "
-            << (unsigned) *(reinterpret_cast<unsigned char*>(searchp)+2) << " "
-            << (unsigned) *(reinterpret_cast<unsigned char*>(searchp)+3) << std::dec << std::endl;
-
-    	if (*reinterpret_cast<unsigned*>(searchp) == MARKER_ADDRESS)
-        {
-            // overwrite the AST node pointer with the appropriate one
-            *searchp = this->suite;
-            std::cerr << "Installed AST node pointer for entry point " << this->name
-    	        << ", AST at " << (void*) this->suite << std::endl;
-			searchp++; // advance by a pointer's worth
-        }
-    	// advance by a byte's worth
-    	else searchp = (Statement**) (((char*) searchp) + 1); 
-	} 
-
-    encap::loc_expr expr1(opcodes1, //expr1.lopc = 0; expr1.hipc = 1;
-		(Dwarf_Unsigned)((char*)(ret)) + 0, (Dwarf_Unsigned)((char*)(ret) + 1)); 
-    encap::loc_expr expr2(opcodes2,//expr2.lopc = 1; expr2.hipc = 3;
-		(Dwarf_Unsigned)((char*)(ret)) + 1, (Dwarf_Unsigned)((char*)(ret) + 3)); 
-    encap::loc_expr expr3(opcodes3, /*sizeof prologue_bytes + sizeof call_bytes + sizeof epilogue_bytes + 1*/ // <-- +1 is wrong here 
-		(Dwarf_Unsigned)((char*)(ret) + 3), (Dwarf_Unsigned)((char*)(ret) + entry_point_size));
-    
-    encap::loclist loc(expr1); loc.push_back(expr2); loc.push_back(expr3);
-    subprogram_die->set_frame_base(loc);
-    
-    // children: formal parameters
-    // -- one untyped parameter per formal
-	unsigned offset = 0;
-    for (int i = 0; i < parameter_list->size(); i++)
-    {
+	// children: formal parameters
+	// -- one untyped parameter per formal
+	// first generate the list of arguments
+	for (int i = 0; i < parameter_list->size(); i++)
+	{
 		auto fp = dynamic_pointer_cast<encap::formal_parameter_die>(
 			f.create_die(
 				DW_TAG_formal_parameter,
@@ -165,20 +82,21 @@ val FunctionDefinition::evaluate()
 					dynamic_cast<NamePhrase&>(*parameter_list->get(i)->getValue()).getName()
 				)
 			));
-		
-		// add the location description -- 
-		Dwarf_Unsigned opcodes[] = { DW_OP_fbreg, offset };
-		fp->set_location(
-			encap::loclist(
-				encap::loc_expr(opcodes, 0, std::numeric_limits<Dwarf_Addr>::max()))); 
-		
-		// increment the stack offset of the parameter
-		offset += sizeof (void*);
-		
 		// add the type
 		fp->set_type(dynamic_pointer_cast<spec::type_die>(p_builtin_reference_type));
-	}    
-    
+	}
+	
+	// let the archdep code do the rest
+	size_t out_sz;
+	write_entry_point_and_fp_locations(
+		this,
+		subprogram_die, /* determines ABI */
+		ret, /* dest */
+		sysconf(_SC_PAGE_SIZE), /* max size of buffer */
+		&out_sz /* #bytes written */
+	);
+	
+        
     // children: local variables?
     // -- we simply enumerate all non-argument non-prefixed identifiers appearing in the AST
     // -- can we have computed-identifier locals in functions in Python?

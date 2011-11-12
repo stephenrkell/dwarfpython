@@ -3,6 +3,7 @@
 
 #include <dwarfpp/adt.hpp>
 #include <dwarfpp/encap.hpp>
+#include <pmirror/process.hpp>
 
 //class ParathonValue;
 /*typedef void ParathonValue;*/ /* val replaces ParathonValue */

@@ -102,6 +102,7 @@ class File(object):
         self.upname = self.classname.replace("&", "")
         self.downname = decamel(self.upname)
         self.privates = []
+        self.friends = []
         self.protecteds = []
         self.publics = []
         self.virtuals = []
@@ -119,6 +120,9 @@ class File(object):
 
             elif line.startswith(" * virtual: "):
                 self.virtuals += [line.replace(" * virtual: ","").strip()]
+
+            elif line.startswith(" * friend: "):
+                self.friends += [line.replace(" * friend: ","").strip()]
 
             elif line.startswith(" * inherits: "):
                 self.inherits = line.replace(" * inherits: ", "").strip()
@@ -168,6 +172,10 @@ class File(object):
         for p in self.privates:
             yield p
 
+    def get_friends(self):
+        for f in self.friends:
+            yield f
+ 
     def get_protecteds(self):
         for p in self.protecteds:
             yield p
@@ -182,6 +190,7 @@ class %s: public %s
     public:
         %s
         %s
+    %s
     private:
         %s
     protected:
@@ -191,6 +200,7 @@ class %s: public %s
         "\n        ".join(self.get_constructors()),
         "\n        ".join(self.get_public_functions()),
         "\n        ".join(self.get_privates()),
+        "\n        friend ".join(self.get_friends()),
         "\n        ".join(self.get_protecteds()))
 
 def get_statement_interface():

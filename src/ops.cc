@@ -12,7 +12,6 @@
 #include <dwarfpp/cxx_compiler.hpp>
 #include <dwarfpp/regs.hpp>
 
-#include <pmirror/process.hpp>
 #include <pmirror/unw_regs.hpp>
 
 #include <libreflect.hpp>
@@ -26,6 +25,16 @@ using dwarf::spec::with_dynamic_location_die;
 using dwarf::spec::subprogram_die;
 using pmirror::process_image;
 using pmirror::self;
+
+/* HACK: for comparing stack goings-on */
+static long fac(void *arg)
+{
+	printf("fac: arg is at %p, contents %p, pointing at %p\n", 
+		&arg, arg, *(void**)arg);
+	if (*(long*)arg == 0) return 1;
+	long tmp =  *(long*)arg - 1;
+	return *(long*)arg * fac(&tmp);
+}
 
 val normalize_val(val value)
 {
@@ -81,6 +90,7 @@ val normalize_val(val value)
 	}
 }
 
+/* FIXME: what is this function for? I can't remember.... */
 void *raw_address_of_val(const val& value, val *temporary)
 {
 	/* "reference" behaviour -- pass the address of the object denoted by val */
@@ -442,11 +452,12 @@ val lookup_name(const std::string& name)
 			assert(found_lookup_frame);
 			/* HACK: use caller_sp directly as the frame base, for now */
 			auto found_location = dynamic_pointer_cast<spec::with_dynamic_location_die>(result);
+			lib::Dwarf_Addr cu_base = (found_lookup_frame->enclosing_compile_unit()->get_low_pc() ?
+					 found_lookup_frame->enclosing_compile_unit()->get_low_pc()->addr : 0UL);
 			lib::Dwarf_Unsigned addr = found_location->calculate_addr(
 				output.frame_base,
-				output.ip - /*image.get_dieset_base(found_lookup_frame->get_ds())*/
-					(found_lookup_frame->enclosing_compile_unit()->get_low_pc() ?
-					 found_lookup_frame->enclosing_compile_unit()->get_low_pc()->addr : 0UL), /* This is our file-relative IP within the function whose frame includes the local allocation */
+				output.ip - cu_base, 
+				/* This is our file- or CU??? -relative IP within the function whose frame includes the local allocation */
 				/* regs = */ 0);
 			
 				
@@ -486,7 +497,7 @@ val lookup_name(const std::string& name)
 				std::cerr << "Since variable " << name 
 					<< " is a reference, dereferencing " << std::hex << r.i_ptr << std::dec 
 					<< " to yield resolved variable at location " << std::hex << derefed << std::dec
-					<< " (word value currently : 0x" << std::hex << *(unsigned*)derefed << ")" << std::dec
+					<< " (word value currently : 0x" << std::hex << *(unw_word_t*)derefed << ")" << std::dec
 					<< std::endl;
 				return (val) { false, { i_ptr: derefed }, val::TBD };
 			}
@@ -692,7 +703,7 @@ val call_function(val function, std::vector<val> *params)
 {
 	//assert(function.descr->get_tag() == DW_TAG_subprogram);
 	shared_ptr<spec::with_static_location_die> discovered 
-	 = self.discover_object((process_image::addr_t)function.i_ptr, 0);
+	 = self.discover_object((process_image::addr_t)(function.i_ptr), 0);
 	assert(discovered && discovered->get_tag() == DW_TAG_subprogram);
 	shared_ptr<subprogram_die> subp = dynamic_pointer_cast<subprogram_die>(discovered);
 	
@@ -763,17 +774,75 @@ val call_function(val function, std::vector<val> *params)
 			&& (*(*i_fp)->get_type())->get_concrete_type()->get_tag() == DW_TAG_reference_type)
 		{
 			/* "reference" behaviour -- pass the address of the object denoted by val,
-			 * meaning we need to be able to take the address of that address. */
-			reference_temporaries_buf[i_arg_val] 
-			= (val) { true, { i_ptr: raw_address_of_val(*i_param, 0) }, val::OTHER_PTR };
-			ffi_arg_buf[i_arg_val] = raw_address_of_val(reference_temporaries_buf[i_arg_val], 0);
+			 * meaning we need to be able to take the address of that address. 
+			 * 
+			 * PROBLEM: we can't just take the address of our val object, because
+			 * when the recipient does object discovery on that address, it won't
+			 * turn anything up. Instead, we need to "extend the stack frame"
+			 * of the Python function we're executing. BUT even that won't fix
+			 * things. Suppose we allocate one DWARF "variable" for each argument
+			 * for each call-site in the function. We won't be able to give a
+			 " "type" for that variable, because it varies from call to call.
+			 * Put another way:
+			 * for a given temporary, the set of possible "types" of a temporary,
+			 * e.g. pointer or int, is open.
+			 * Moreover, we won't know until we've partially executed the function.
+			 * because we won't be able to give a *type* for that variable.
+			 * We might lazily construct DWARF types for each variant of the 
+			 * stack frame. But then we need the ability to swap individual frames
+			 * to being instances of this new (which will have a new text location). 
+			 * That seems hard (rewriting addresses on the stack).
+			 * 
+			 * Is there a neater solution to this?
+			 * We could make the temporaries "val", reify this in DWARF,
+			 * do the variant detection extension, and then proceed as 
+			 * at present with the temporaries buf? 
+			 *
+t			 * Pithy title: this is the "polymorphic temporaries" problem. 
+			 * It feels like the union/variant approach is the right one.
+			 * We can hack this up for now, without implementing the DWARF
+			 * extension. */
+			
+			// to pass something by reference, we simply indirect it
+			// once more than we otherwise would. Even immediate values can be
+			// address-taken, so this should be fine. We generate a new val
+			// which points *inside* the current val. 
+			// Do we need to normalize? YES. This is very important.
+			// If our val is non-immediate
+			void *ref_address;
+			if (i_param->is_immediate) ref_address = &i_param->u;
+			else ref_address = i_param->i_ptr;
+			// Now store this address somewhere where we can take *its* address
+			reference_temporaries_buf[i_arg_val]
+			 = (val) { true, { i_ptr: ref_address }, val::OTHER_PTR };
+			// .. and make the FFI buf point to that pointer 
+			ffi_arg_buf[i_arg_val] = &reference_temporaries_buf[i_arg_val].u;
+			
+				
+// 				reference_temporaries_buf[i_arg_val] 
+// 				= (val) { true, { i_ptr: raw_address_of_val(*i_param, 0) }, val::OTHER_PTR };
+// 				void *raw_address = raw_address_of_val(reference_temporaries_buf[i_arg_val], 0);
+// 			}
+// 			else
+// 			{
+// 				raw_address = &i_param->u;
+// 			}
+// 			
+			//ffi_arg_buf[i_arg_val] = raw_address;
+			std::cerr << "FFI arg " << i_arg_val
+				<< " is being passed by reference: "
+				<< " value is " << *i_param
+				//<< ", in reference temporaries buf beginning " << reference_temporaries_buf
+				<< " position " << i_arg_val 
+				<< ", ref address  " << ref_address
+				<< ", word value of this address being " << *reinterpret_cast<unw_word_t*>(ref_address)
+				<< std::endl;
 		}
 		else
 		{
 			/* "normal" behaviour */
-			ffi_arg_buf[i_arg_val] = i_param->is_immediate ? (void *) &i_param->i_int : i_param->i_ptr;
-			// note that this work for double too because ^ this is a union
-			// FIXME: this is broken for doubles or non-32bit ints!
+			ffi_arg_buf[i_arg_val] = i_param->is_immediate ? (void *) &i_param->u : i_param->i_ptr;
+			// FIXME: this is broken for doubles (on 32bit platforms) or non-wordsize ints!
 		}
 		
 	}
@@ -808,15 +877,18 @@ val call_function(val function, std::vector<val> *params)
 		if (i != 0) std::cerr << ", ";
 		std::cerr << (params->at(i).is_immediate ? 
 			params->at(i).i_int 
-		: 	*(reinterpret_cast<int*>(params->at(i).i_ptr)))
+		: 	*(reinterpret_cast<unw_word_t*>(params->at(i).i_ptr)))
 		<< "[in ffi_arg buf at " << &ffi_arg_buf[i] 
 		<< ", pointing to " << ffi_arg_buf[i] 
-		<< ", word value " << *(int*)ffi_arg_buf[i] 
+		<< ", word value " << *(unw_word_t*)ffi_arg_buf[i] 
 		<< "]";
 	}
 	std::cerr << ")" << std::endl;
-	
+
+	// for comparison!
+	//ffi_call(&cif, FFI_FN(fac), &result, ffi_arg_buf);
 	ffi_call(&cif, FFI_FN(function.i_ptr), &result, ffi_arg_buf);
+	//assert(false);
 
 	// The ffi_arg 'result' now contains the unsigned char returned from foo(),
 	// which can be accessed by a typecast.

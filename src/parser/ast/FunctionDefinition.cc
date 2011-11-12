@@ -5,6 +5,7 @@
  * private: NamePhrase *name;
  * private: ParameterList *parameter_list;
  * private: Suite *suite;
+ * friend: void update_fake_ast_pointer (void *dest, size_t sz, FunctionDefinition *ast);
  * virtual: val evaluate();
  */
 FunctionDefinition *FunctionDefinition::parse(T_DEF _t, NamePhrase *np, T_OPEN_CURVED _tt, ParameterList *pl, T_CLOSE_CURVED _ttt, T_COLON _tttt, Suite *s)

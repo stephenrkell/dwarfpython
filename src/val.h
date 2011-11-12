@@ -22,6 +22,7 @@ struct val
      * This is not clear. ValueString used to generate them but now fixed. */
     union 
     {
+		struct {} u;
         int i_int;
         double i_double;
         void *i_ptr;

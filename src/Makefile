@@ -1,7 +1,7 @@
 CXXFLAGS += -Iparser -I.
-CXXFLAGS += -std=c++0x -g3 -fno-eliminate-unused-debug-types
+CXXFLAGS += -std=gnu++0x -g3 -fno-eliminate-unused-debug-types
 
-LDLIBS += -lfl -lreadline -lffi -ldwarfpp -lsrk31c++ -lc++fileno -ldwarf -lelf -lgc -lstdc++ -lunwind -lunwind-ptrace -lunwind-$(shell uname -m) -lreflect -lboost_regex
+LDLIBS += -lfl -lreadline -lffi -ldwarfpp -lsrk31c++ -lc++fileno -ldwarf -lelf -lgc -lstdc++ -lunwind -lunwind-ptrace -lunwind-$(shell uname -m) -lpmirror -lreflect -lboost_regex
 
 C_SRC := buffer.c
 CC_SRC := main.cc ops.cc
@@ -35,8 +35,8 @@ ifneq ($(MAKECMDGOAL),clean)
 -include $(DEPS)
 endif
 
-dwarfpy: parser-recursive buffer.o ops.o function_definition.o util.o arithmetic.o assign.o control.o resolve.o
-	$(CXX) $(CXXFLAGS) -o "$@" main.cc buffer.o function_definition.o arithmetic.o assign.o control.o resolve.o util.o ops.o parser/*.o parser/ast/*.o $(LDFLAGS) $(LDLIBS) 
+dwarfpy: buffer.o ops.o function_definition.o util.o arithmetic.o assign.o control.o resolve.o archdep.o | parser-recursive
+	$(CXX) $(CXXFLAGS) -o "$@" main.cc buffer.o function_definition.o arithmetic.o assign.o control.o resolve.o util.o ops.o archdep.o parser/*.o parser/ast/*.o $(LDFLAGS) $(LDLIBS) 
 
 debug-fac: dwarfpy
 	gdb dwarfpy --eval-command "run <<<\$$'def fac(n):\n\tif n == 0: return 1\n\tprint \"calculating fac of \"\n\tprint n\n\treturn n * fac(n-1)\n\nprint fac(2)\n'"
