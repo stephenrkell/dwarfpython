@@ -1,0 +1,20 @@
+DwarfPython non-release README
+
+If you are reading this, you have probably read the VMIL 2011 paper 
+"Virtual machines should be invisible" by myself and Conrad Irwin.
+
+Following a request (yes, just one ;-) I am making this code available. 
+As you will know from reading the paper, it currently does very little!  
+Arithmetic is next on the to-do list (i.e. does not currently work).
+
+What does work is function definition and function calling -- at least 
+in simple cases. Most importantly, the interpreter's data structures are 
+maintained according to DWARF's latent metamodel.  New function 
+definitions generate new DWARF records, and
+
+Unfortunately I can't say when I'll be able to work on this further. 
+It's only ever been a side project, although I would love that to 
+change.
+
+Stephen Kell <srkell@acm.org>
+October 2012
