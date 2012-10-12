@@ -10,7 +10,8 @@ Arithmetic is next on the to-do list (i.e. does not currently work).
 What does work is function definition and function calling -- at least 
 in simple cases. Most importantly, the interpreter's data structures are 
 maintained according to DWARF's latent metamodel.  New function 
-definitions generate new DWARF records, and
+definitions generate new DWARF records, metadata for called functions is 
+looked up on DWARF info, and so on.
 
 Unfortunately I can't say when I'll be able to work on this further. 
 It's only ever been a side project, although I would love that to 
