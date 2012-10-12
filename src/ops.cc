@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <cstdarg>
 
-#include <dwarfpp/cxx_compiler.hpp>
+#include <dwarfpp/cxx_model.hpp>
 #include <dwarfpp/regs.hpp>
 
 #include <pmirror/unw_regs.hpp>
@@ -241,13 +241,14 @@ struct stack_walk_output
 {
 	unw_word_t frame_base;
 	unw_word_t ip;
-	std::vector<boost::shared_ptr<spec::with_named_children_die> > *starting_points;
+	std::vector<std::shared_ptr<spec::with_named_children_die> > *starting_points;
 };
 static int lexical_name_lookup_handler(
 		process_image *image,
 		unw_word_t frame_sp, unw_word_t frame_ip, 
 		const char *frame_proc_name,
 		unw_word_t frame_caller_sp,
+		unw_word_t frame_caller_ip, 
 		unw_word_t frame_callee_ip,
 		unw_cursor_t frame_cursor,
 		unw_cursor_t frame_callee_cursor,
@@ -257,6 +258,7 @@ static int lexical_name_lookup_handler(
 		unw_word_t frame_sp, unw_word_t frame_ip, 
 		const char *frame_proc_name,
 		unw_word_t frame_caller_sp,
+		unw_word_t frame_caller_ip, 
 		unw_word_t frame_callee_ip,
 		unw_cursor_t frame_cursor,
 		unw_cursor_t frame_callee_cursor,
@@ -269,7 +271,7 @@ static int lexical_name_lookup_handler(
 
 	// if we hit an entry point...
 	if (image->discover_object_memory_kind(
-		(process_image::addr_t)frame_ip) == process_image::ANON) // HACK: want a better test here
+		(process_image::addr_t)frame_ip) == object_memory_kind::ANON) // HACK: want a better test here
 	{
 		std::cerr << "Stack walk hit an entry point..." << std::endl;
 		
@@ -369,7 +371,7 @@ val lookup_name(const std::string& name)
 		if (next_pos != std::string::npos) pos = next_pos + 1;
 	} while (pos < name.length());
 	
-	std::vector<boost::shared_ptr<spec::with_named_children_die> > starting_points;
+	std::vector<std::shared_ptr<spec::with_named_children_die> > starting_points;
 	// include the local lexical block in the starting points, if we have one
 	// -- to decide this, walk up the stack:
 	//    we will either hit an entry point (and can resolve names in its DWARF info)
@@ -421,8 +423,8 @@ val lookup_name(const std::string& name)
 			auto cur = self.files[i->second].p_ds->toplevel()->get_first_child();
 			do
 			{
-				boost::shared_ptr<spec::with_named_children_die> to_add
-					= boost::dynamic_pointer_cast<spec::with_named_children_die>(cur);
+				std::shared_ptr<spec::with_named_children_die> to_add
+					= dynamic_pointer_cast<spec::with_named_children_die>(cur);
 				if (to_add) starting_points.push_back(to_add);
 				cur = cur->get_next_sibling();
 			} while(true); // will fail by No_entry
@@ -443,7 +445,7 @@ val lookup_name(const std::string& name)
 		{
 			process_image::addr_t p_obj = self.get_object_from_die(
 				/* FIXME: get vaddr from ParathonContext */
-				boost::dynamic_pointer_cast<spec::with_static_location_die>(result), 0);
+				dynamic_pointer_cast<spec::with_static_location_die>(result), 0);
 			r = (val) { false, { i_ptr: reinterpret_cast<void*>(p_obj) }, val::TBD };
 		}
 		else if (dynamic_pointer_cast<spec::with_dynamic_location_die>(result))
@@ -491,7 +493,7 @@ val lookup_name(const std::string& name)
 			auto result_wsl = dynamic_pointer_cast<with_dynamic_location_die>(result);
 			assert(result_wsl);
 			if (result_wsl->get_type() &&
-				(*result_wsl->get_type())->get_tag() == DW_TAG_reference_type)
+				result_wsl->get_type()->get_tag() == DW_TAG_reference_type)
 			{
 				void *derefed = *reinterpret_cast<void**>(r.i_ptr);
 				std::cerr << "Since variable " << name 
@@ -510,7 +512,13 @@ val lookup_name(const std::string& name)
 void print_value_to_stream(void *value, std::ostream& s, 
 	shared_ptr<type_die> opt_descr /* = shared_ptr<type_die>() */) 
 {
-	static dwarf::tool::cxx_compiler compiler(std::vector<std::string>(1, "g++"));
+	class dwarfpython_cxx_target : public dwarf::tool::cxx_target
+	{ 
+	public:
+		dwarfpython_cxx_target(const vector<string>& s) : dwarf::tool::cxx_target(s) {}
+		string get_untyped_argument_typename() { return "int"; }
+	};
+	static dwarfpython_cxx_target compiler(std::vector<std::string>(1, "g++"));
 
 /*	val v = { false, 
   			{ i_ptr: value }, 
@@ -546,8 +554,8 @@ void print_value_to_stream(void *value, std::ostream& s,
    			back an array type if the pointed-to object is a block of n>1? */
 			/* Termination style! HACK: use char-or-not test. */
 			if (
-			((*arr_descr->get_type())->get_concrete_type())->get_tag() == DW_TAG_base_type
- 			&& dynamic_pointer_cast<spec::base_type_die>((*arr_descr->get_type())->get_concrete_type())->get_encoding()
+			(arr_descr->get_type()->get_concrete_type())->get_tag() == DW_TAG_base_type
+ 			&& dynamic_pointer_cast<spec::base_type_die>(arr_descr->get_type()->get_concrete_type())->get_encoding()
   			== DW_ATE_signed_char)
 			{
 				/* Assume it's null-terminated. */
@@ -560,16 +568,16 @@ void print_value_to_stream(void *value, std::ostream& s,
 				/* Assume it's explicitly sized */
 				assert(arr_descr->element_count()); 
 				assert(arr_descr->get_type());
-				assert((*arr_descr->get_type())->calculate_byte_size());
+				assert(arr_descr->get_type()->calculate_byte_size());
 				s << "[";
 				int index __attribute__((unused)) 
 				 = *arr_descr->enclosing_compile_unit()->implicit_array_base();
 				for (int i = 0; i < *arr_descr->element_count(); index++, i++)
 				{
 					print_value_to_stream((char*)value 
-						+ i * *(*arr_descr->get_type())->calculate_byte_size(),
+						+ i * *arr_descr->get_type()->calculate_byte_size(),
 						s,
-						*arr_descr->get_type());
+						arr_descr->get_type());
 				}
 				s << "]";
 				return;
@@ -731,7 +739,7 @@ val call_function(val function, std::vector<val> *params)
 		 << " have a type." << std::endl;
 		ffi_type_buf[i_arg_type] = ffi_type_for_concrete_dwarf_type(
 							(*i_fp)->get_type() ? 
-							(*(*i_fp)->get_type())->get_concrete_type() 
+							(*i_fp)->get_type()->get_concrete_type() 
 							: shared_ptr<type_die>());
 	}
 	
@@ -770,8 +778,8 @@ val call_function(val function, std::vector<val> *params)
 		/* Here we're really coding an "address of" function. */
 		// address_of(val *reference_temporary);
 		
-		if ((*i_fp)->get_type() && (*(*i_fp)->get_type())->get_concrete_type()
-			&& (*(*i_fp)->get_type())->get_concrete_type()->get_tag() == DW_TAG_reference_type)
+		if ((*i_fp)->get_type() && (*i_fp)->get_type()->get_concrete_type()
+			&& (*i_fp)->get_type()->get_concrete_type()->get_tag() == DW_TAG_reference_type)
 		{
 			/* "reference" behaviour -- pass the address of the object denoted by val,
 			 * meaning we need to be able to take the address of that address. 
@@ -851,12 +859,12 @@ t			 * Pithy title: this is the "polymorphic temporaries" problem.
 	// must be passed as ffi_arg or ffi_sarg. FIND OUT what must happen when
 	// return value is not so small!
 	// v-- here assert that the return value has size < sizeof long
-	assert(!subp->get_type() || ( (*subp->get_type())->calculate_byte_size() 
-							&&  *(*subp->get_type())->calculate_byte_size() <= sizeof (long))); 
+	assert(!subp->get_type() || ( subp->get_type()->calculate_byte_size() 
+							&&  *subp->get_type()->calculate_byte_size() <= sizeof (long))); 
 	ffi_arg result;
 	ffi_type *result_type = ffi_type_for_concrete_dwarf_type(
 								subp->get_type() ? 
-									(*subp->get_type())->get_concrete_type()
+									subp->get_type()->get_concrete_type()
 								: shared_ptr<type_die>());
 
 	ffi_status status;
@@ -930,7 +938,7 @@ t			 * Pithy title: this is the "polymorphic temporaries" problem.
 	{
 		auto result_pointer_type = 
 			dynamic_pointer_cast<pointer_type_die>(
-				(*subp->get_type())->get_concrete_type()); // a pointer type...
+				subp->get_type()->get_concrete_type()); // a pointer type...
 		auto opt_result_pointed_to_type = result_pointer_type->get_type();
 		result_val = (val) { false, { i_ptr: (void *) result }, val::TBD };
 		// opt_result_pointed_to_type ? 

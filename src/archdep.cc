@@ -9,7 +9,7 @@
 using std::vector;
 using std::pair;
 using std::make_pair;
-using boost::shared_ptr;
+using std::shared_ptr;
 using dwarf::spec::base_type_die;
 using dwarf::spec::structure_type_die;
 using dwarf::spec::class_type_die;
@@ -20,7 +20,7 @@ using namespace dwarf::lib;
 void
 write_entry_point_and_fp_locations(
 	FunctionDefinition *ast,
-	boost::shared_ptr<dwarf::encap::subprogram_die> subp, /* determines ABI */
+	std::shared_ptr<dwarf::encap::subprogram_die> subp, /* determines ABI */
 	void *dest, /* dest */
 	size_t sz, /* size of buffer */
 	size_t *out_sz /* #bytes written */
@@ -152,7 +152,7 @@ const unsigned max_entry_point_size =
 
 void 
 write_basic_entry_point(
-	boost::shared_ptr<dwarf::spec::subprogram_die> subp, 
+	std::shared_ptr<dwarf::spec::subprogram_die> subp, 
 	unsigned registers_used,
 	void *dest, 
 	size_t sz, 
@@ -201,7 +201,7 @@ write_basic_entry_point(
 
 void 
 write_frame_base(
-	boost::shared_ptr<dwarf::encap::subprogram_die> subp, Dwarf_Addr lopc, Dwarf_Addr hipc)
+	std::shared_ptr<dwarf::encap::subprogram_die> subp, Dwarf_Addr lopc, Dwarf_Addr hipc)
 {
     // give it a frame_base? YES, just make it ebp (no lexical blocks to worry about)
 #ifdef __x86__
@@ -251,7 +251,7 @@ write_frame_base(
 }
 	
 void write_fp_location_descriptions(
-	boost::shared_ptr<dwarf::encap::subprogram_die> subp,
+	std::shared_ptr<dwarf::encap::subprogram_die> subp,
 	unsigned *out_registers_used)
 {
 	// compute location descriptions -- ABI may depend on types
@@ -282,8 +282,7 @@ void write_fp_location_descriptions(
 		// FIXME: sadly, the switch statement below should instead be
 		// a dynamic_pointer_cast if--else--else, so that we can use
 		// the abstract superclasses like with_data_members.
-		auto opt_t = (*i_arg)->get_type();
-		auto t = *opt_t;
+		auto t = (*i_arg)->get_type();
 		auto ct = t->get_concrete_type();
 		/*
 		INTEGER This class consists of integral types that fit into one of the general

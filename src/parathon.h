@@ -14,10 +14,9 @@ struct ParathonContext; /* FIXME: remove this */
 
 class SingleInput;
 
-using boost::shared_ptr;
-using boost::dynamic_pointer_cast;
+using std::shared_ptr;
+using std::dynamic_pointer_cast;
 using namespace dwarf;
-using boost::shared_ptr;
 
 extern shared_ptr<encap::base_type_die> p_builtin_int_type; // overwritten in init
 extern shared_ptr<encap::base_type_die> p_builtin_double_type; // overwritten in init

@@ -1,7 +1,24 @@
 CXXFLAGS += -Iparser -I.
 CXXFLAGS += -std=gnu++0x -g3 -fno-eliminate-unused-debug-types
 
-LDLIBS += -lfl -lreadline -lffi -ldwarfpp -lsrk31c++ -lc++fileno -ldwarf -lelf -lgc -lstdc++ -lunwind -lunwind-ptrace -lunwind-$(shell uname -m) -lpmirror -lreflect -lboost_regex
+# This order matters a lot! It controls inter-object static initialization order.
+# (Recall: __attribute__((init_priority(N))) controls ordering
+# *within* an object, but *between* CUs in that object.)
+LDLIBS += \
+-lreflect \
+-lpmirror \
+-ldwarfpp \
+-lsrk31c++ \
+-lboost_regex \
+-lc++fileno \
+-lstdc++ \
+-lunwind -lunwind-ptrace -lunwind-$(shell uname -m) \
+-lgc \
+-lffi \
+-ldwarf \
+-lelf \
+-lfl \
+-lreadline 
 
 C_SRC := buffer.c
 CC_SRC := main.cc ops.cc
@@ -35,7 +52,7 @@ ifneq ($(MAKECMDGOAL),clean)
 -include $(DEPS)
 endif
 
-dwarfpy: buffer.o ops.o function_definition.o util.o arithmetic.o assign.o control.o resolve.o archdep.o | parser-recursive
+dwarfpy: parser-recursive buffer.o ops.o function_definition.o util.o arithmetic.o assign.o control.o resolve.o archdep.o | parser-recursive
 	$(CXX) $(CXXFLAGS) -o "$@" main.cc buffer.o function_definition.o arithmetic.o assign.o control.o resolve.o util.o ops.o archdep.o parser/*.o parser/ast/*.o $(LDFLAGS) $(LDLIBS) 
 
 debug-fac: dwarfpy

@@ -10,7 +10,7 @@
 #include <dwarfpp/encap.hpp>
 
 //builtins(dwarf::spec::DEFAULT_DWARF_SPEC);
-boost::shared_ptr<dwarf::encap::dieset> p_builtins;
+std::shared_ptr<dwarf::encap::dieset> p_builtins;
 
 /* This is the interpreter state. */
 bool interpreterMode; /* whether we're acting as a REPL or not */
@@ -41,7 +41,7 @@ void init()
 	using namespace dwarf::encap;
 	using boost::dynamic_pointer_cast;
 	
-	p_builtins = boost::make_shared<dwarf::encap::dieset>(dwarf::spec::DEFAULT_DWARF_SPEC);
+	p_builtins = std::make_shared<dwarf::encap::dieset>(dwarf::spec::DEFAULT_DWARF_SPEC);
 	dwarf::encap::dieset& builtins = *p_builtins;
 
 	/* We don't need to call delete on these, nor to explicitly add them

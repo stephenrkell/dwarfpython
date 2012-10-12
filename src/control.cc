@@ -16,7 +16,7 @@ val SuiteBody::evaluate()
 		<< std::endl;
 	if (self.discover_object_memory_kind(
 		reinterpret_cast<process_image::addr_t>(__builtin_return_address(0))) 
-		== process_image::ANON)
+		== object_memory_kind::ANON)
 	{
 		try
 		{

@@ -19,7 +19,7 @@ class FunctionDefinition; // forward decl
 void
 write_entry_point_and_fp_locations(
 	FunctionDefinition *ast,
-	boost::shared_ptr<dwarf::encap::subprogram_die> subp, /* determines ABI */
+	shared_ptr<dwarf::encap::subprogram_die> subp, /* determines ABI */
 	void *dest, /* dest */
 	unsigned long sz, /* size of buffer */
 	unsigned long *out_sz /* #bytes written */
@@ -27,7 +27,7 @@ write_entry_point_and_fp_locations(
 
 void 
 write_basic_entry_point(
-	boost::shared_ptr<dwarf::spec::subprogram_die> subp,
+	shared_ptr<dwarf::spec::subprogram_die> subp,
 	unsigned registers_used, 
 	void *dest, 
 	size_t sz, 
@@ -38,13 +38,13 @@ update_fake_ast_pointer(void *dest, size_t sz, FunctionDefinition *ast);
 
 void
 write_frame_base(
-	boost::shared_ptr<dwarf::encap::subprogram_die> subp, 
+	shared_ptr<dwarf::encap::subprogram_die> subp, 
 	dwarf::lib::Dwarf_Addr hipc, 
 	dwarf::lib::Dwarf_Addr lopc);
 
 void 
 write_fp_location_descriptions(
-	boost::shared_ptr<dwarf::encap::subprogram_die> subp, 
+	shared_ptr<dwarf::encap::subprogram_die> subp, 
 unsigned *registers_used);
 
 #endif
