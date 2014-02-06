@@ -54,8 +54,11 @@ ifneq ($(MAKECMDGOAL),clean)
 -include $(DEPS)
 endif
 
-dwarfpy: parser-recursive buffer.o ops.o function_definition.o util.o arithmetic.o assign.o control.o resolve.o archdep.o | parser-recursive
-	$(CXX) $(CXXFLAGS) -o "$@" main.cc buffer.o function_definition.o arithmetic.o assign.o control.o resolve.o util.o ops.o archdep.o parser/*.o parser/ast/*.o $(LDFLAGS) $(LDLIBS) 
+libdwarfpy.a: init.o buffer.o ops.o function_definition.o util.o arithmetic.o assign.o control.o resolve.o archdep.o parser/*.o parser/ast/*.o| parser-recursive
+	ar r "$@" $^
+
+dwarfpy: parser-recursive main.o libdwarfpy.a
+	$(CXX) $(CXXFLAGS) -o "$@" main.cc -L. -ldwarfpy $(LDFLAGS) $(LDLIBS) 
 
 debug-fac: dwarfpy
 	gdb dwarfpy --eval-command "run <<<\$$'def fac(n):\n\tif n == 0: return 1\n\tprint \"calculating fac of \"\n\tprint n\n\treturn n * fac(n-1)\n\nprint fac(2)\n'"

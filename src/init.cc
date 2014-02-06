@@ -7,6 +7,7 @@
 #include <string.h>
 #include "signal.h"
 #include "setjmp.h"
+#include "init.hh"
 #include <dwarfpp/encap.hpp>
 
 //builtins(dwarf::spec::DEFAULT_DWARF_SPEC);
@@ -153,34 +154,6 @@ int parse_loop(yy_extra_type extra)
     yypstate_delete(ps);
     yylex_destroy(scanner);
     return 0;
-}
-
-int main(int argc, char ** argv)
-{
-//     if(setjmp(JumpBuffer))
-//     {
-//         std::cout << "Caught signal during initialisation. Will now die." << std::endl;
-//         exit(0);
-//     }
-//     //signal(SIGSEGV, interrupt_handler);
-//     //signal(SIGFPE, interrupt_handler);
-//     //signal(SIGILL, interrupt_handler);
-// 
-//     initialize_builtins(&ParathonValue::builtins);
-	executable_path = argv[0];
-    std::cout << "This is DwarfPython.\nCtrl-D exits." << std::endl;
-    //ParathonContext globals/*(ParathonValue::builtins)*/;
-    interpreterMode = true;
-    toplevel = dynamic_pointer_cast<encap::compile_unit_die>((*p_builtins)[1UL]);
-//    globals.assign("__name__", new ParathonValue("__main__"));
-
-    int result;
-    yy_extra_type a;
-    YY_EXTRA_FOR_FILE(a, stdin);
-    result = parse_loop(a);
-
-    std::cout << std::endl;
-    return result;
 }
 
 const char *Operator::opname()
