@@ -7,6 +7,8 @@ CXXFLAGS += -std=gnu++0x -g3 -fno-eliminate-unused-debug-types
 LDLIBS += \
 -lreflect \
 -lpmirror \
+-ldwarfidl \
+-lcxxgen \
 -ldwarfpp \
 -lsrk31c++ \
 -lboost_regex \

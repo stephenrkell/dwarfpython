@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <cstdarg>
 
-#include <dwarfpp/cxx_model.hpp>
+#include <dwarfidl/cxx_model.hpp>
 #include <dwarfpp/regs.hpp>
 
 #include <pmirror/unw_regs.hpp>

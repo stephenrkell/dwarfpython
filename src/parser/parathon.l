@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <limits.h>
+#include <unistd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "buffer.h"
